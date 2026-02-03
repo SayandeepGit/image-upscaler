@@ -17,6 +17,6 @@ router.get('/download/:filename', downloadLimiter, imageController.downloadImage
 router.post('/download-batch/:batchId', downloadLimiter, imageController.downloadBatch);
 
 // Info routes
-router.get('/file-info/:filename', imageController.getFileInfo);
+router.get('/file-info/:filename', downloadLimiter, imageController.getFileInfo);
 
 module.exports = router;
