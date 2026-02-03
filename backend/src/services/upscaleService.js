@@ -67,6 +67,9 @@ class UpscaleService {
       // Get image metadata
       const metadata = await sharp(inputPath).metadata();
       const { width: originalWidth, height: originalHeight, format } = metadata;
+      
+      // Get original file size
+      const originalStats = await fs.stat(inputPath);
 
       // Calculate target dimensions
       const { width, height } = this.getTargetDimensions(
@@ -108,7 +111,7 @@ class UpscaleService {
           width: outputMetadata.width,
           height: outputMetadata.height
         },
-        originalSize: metadata.size,
+        originalSize: originalStats.size,
         upscaledSize: outputStats.size,
         format: format
       };

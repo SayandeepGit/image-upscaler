@@ -112,7 +112,7 @@ const PreviewComparison = () => {
               </p>
               <p>
                 <strong>Size:</strong>{' '}
-                {formatFileSize(currentImage.originalSize)}
+                {currentImage.originalSize ? formatFileSize(currentImage.originalSize) : 'Unknown'}
               </p>
             </div>
           </div>
@@ -177,7 +177,7 @@ const PreviewComparison = () => {
               <p>
                 <strong>Size:</strong>{' '}
                 {showOriginal
-                  ? formatFileSize(currentImage.originalSize)
+                  ? (currentImage.originalSize ? formatFileSize(currentImage.originalSize) : 'Unknown')
                   : formatFileSize(currentImage.upscaledSize)}
               </p>
             </div>
