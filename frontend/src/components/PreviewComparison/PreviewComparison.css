@@ -1,0 +1,244 @@
+.preview-comparison {
+  margin: 30px 0;
+}
+
+.comparison-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.comparison-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.comparison-controls {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.view-mode-selector {
+  display: flex;
+  gap: 5px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.view-mode-selector button {
+  padding: 8px 16px;
+  border: none;
+  background-color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.view-mode-selector button.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.view-mode-selector button:hover:not(.active) {
+  background-color: #f0f0f0;
+}
+
+.zoom-controls {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.zoom-controls button {
+  padding: 8px 12px;
+  border: 2px solid #ddd;
+  background-color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.zoom-controls button:hover:not(:disabled) {
+  border-color: #4CAF50;
+  background-color: #f0f8f0;
+}
+
+.zoom-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.zoom-controls span {
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.image-selector {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.image-selector button {
+  padding: 8px 16px;
+  border: 2px solid #ddd;
+  background-color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.image-selector button:hover:not(:disabled) {
+  border-color: #4CAF50;
+  background-color: #f0f8f0;
+}
+
+.image-selector button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.image-selector span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.side-by-side-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.toggle-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.toggle-button-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.toggle-btn {
+  padding: 10px 20px;
+  border: 2px solid #ddd;
+  background-color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.toggle-btn:hover {
+  border-color: #4CAF50;
+  background-color: #f0f8f0;
+}
+
+.toggle-btn.active {
+  border-color: #4CAF50;
+  background-color: #4CAF50;
+  color: white;
+}
+
+.image-container {
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  background-color: white;
+}
+
+.image-container h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 18px;
+  text-align: center;
+}
+
+.image-wrapper {
+  width: 100%;
+  max-height: 500px;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  padding: 10px;
+  transition: transform 0.3s ease;
+}
+
+.image-wrapper img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.image-stats {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.image-stats p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.image-stats strong {
+  color: #333;
+}
+
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .comparison-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .comparison-controls {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .view-mode-selector,
+  .zoom-controls {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .side-by-side-view {
+    grid-template-columns: 1fr;
+  }
+
+  .image-wrapper {
+    max-height: 300px;
+  }
+}
