@@ -11,6 +11,21 @@ const api = axios.create({
 
 class ImageService {
   /**
+   * Helper to trigger file download
+   */
+  triggerDownload(blob, filename) {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    // Append to body for older browser compatibility
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
+  /**
    * Upload a single image
    */
   async uploadImage(file) {
@@ -76,15 +91,7 @@ class ImageService {
       responseType: 'blob',
     });
 
-    // Create download link
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    this.triggerDownload(response.data, filename);
   }
 
   /**
@@ -96,15 +103,7 @@ class ImageService {
       { responseType: 'blob' }
     );
 
-    // Create download link
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `batch-${batchId}.zip`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    this.triggerDownload(response.data, `batch-${batchId}.zip`);
   }
 
   /**

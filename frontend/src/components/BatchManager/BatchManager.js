@@ -12,6 +12,7 @@ const BatchManager = () => {
     updateProcessingStatus,
     addProcessedImage,
     setBatchId,
+    processingStatus,
   } = useImageContext();
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -131,8 +132,8 @@ const BatchManager = () => {
                 {image.filename && (
                   <div className="processing-status">
                     <span className="status-indicator">Status:</span>
-                    <span className={`status-badge status-${image.status || 'pending'}`}>
-                      {image.status || 'Pending'}
+                    <span className={`status-badge status-${processingStatus[image.filename] || 'pending'}`}>
+                      {processingStatus[image.filename] || 'Pending'}
                     </span>
                   </div>
                 )}

@@ -71,6 +71,18 @@ class ImageController {
         return res.status(400).json({ error: 'Filename is required' });
       }
 
+      // Validate custom dimensions if preset is 'custom'
+      if (preset === 'custom') {
+        const width = parseInt(customWidth, 10);
+        const height = parseInt(customHeight, 10);
+        
+        if (!customWidth || !customHeight || isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+          return res.status(400).json({ 
+            error: 'Valid custom width and height are required for custom preset' 
+          });
+        }
+      }
+
       const inputPath = fileManager.getFilePath(filename, false);
 
       // Check if file exists
@@ -91,8 +103,8 @@ class ImageController {
         result = await upscaleService.upscaleImage(inputPath, {
           preset,
           method,
-          customWidth: parseInt(customWidth),
-          customHeight: parseInt(customHeight)
+          customWidth: customWidth ? parseInt(customWidth, 10) : undefined,
+          customHeight: customHeight ? parseInt(customHeight, 10) : undefined
         });
       }
 
@@ -117,6 +129,18 @@ class ImageController {
         return res.status(400).json({ error: 'Filenames array is required' });
       }
 
+      // Validate custom dimensions if preset is 'custom'
+      if (preset === 'custom') {
+        const width = parseInt(customWidth, 10);
+        const height = parseInt(customHeight, 10);
+        
+        if (!customWidth || !customHeight || isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+          return res.status(400).json({ 
+            error: 'Valid custom width and height are required for custom preset' 
+          });
+        }
+      }
+
       // Prepare file objects
       const files = filenames.map(filename => {
         const filePath = fileManager.getFilePath(filename, false);
@@ -136,8 +160,8 @@ class ImageController {
       const result = await upscaleService.batchUpscale(existingFiles, {
         preset,
         method,
-        customWidth: parseInt(customWidth),
-        customHeight: parseInt(customHeight)
+        customWidth: customWidth ? parseInt(customWidth, 10) : undefined,
+        customHeight: customHeight ? parseInt(customHeight, 10) : undefined
       });
 
       res.json({

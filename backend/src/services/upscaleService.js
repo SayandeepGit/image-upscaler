@@ -30,6 +30,10 @@ class UpscaleService {
       case '4K':
         return { width: 3840, height: 2160 };
       case 'custom':
+        // Validate custom dimensions
+        if (!customWidth || !customHeight || customWidth <= 0 || customHeight <= 0) {
+          throw new Error('Invalid custom dimensions provided');
+        }
         return { width: customWidth, height: customHeight };
       default:
         return { width: originalWidth * 2, height: originalHeight * 2 };
@@ -88,6 +92,8 @@ class UpscaleService {
       const kernel = this.getKernel(method);
 
       // Process image
+      // Using 'fill' fit mode to resize to exact dimensions
+      // This may distort images if aspect ratio changes
       await sharp(inputPath)
         .resize(width, height, {
           kernel: kernel,
