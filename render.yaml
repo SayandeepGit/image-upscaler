@@ -6,13 +6,18 @@ services:
     buildCommand: cd backend && npm install
     startCommand: cd backend && npm start
     envVars:
+      # Render will auto-assign the PORT - backend uses process.env.PORT
       - key: PORT
         generateValue: true
+      # Max file size in bytes (10MB = 10 * 1024 * 1024 = 10485760)
       - key: MAX_FILE_SIZE
         value: 10485760
+      # CORS origin - set this to your Vercel frontend URL after deployment
       - key: CORS_ORIGIN
         sync: false
+      # File cleanup interval in milliseconds (1 hour = 3600000ms)
       - key: FILE_CLEANUP_INTERVAL
         value: 3600000
+      # Max file age before cleanup in milliseconds (1 hour = 3600000ms)
       - key: FILE_MAX_AGE
         value: 3600000
