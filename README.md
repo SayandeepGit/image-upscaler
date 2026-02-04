@@ -256,6 +256,66 @@ image-upscaler/
 
 The application automatically cleans up uploaded and processed files older than 1 hour. This prevents disk space issues and ensures user privacy.
 
+## 🚀 Deployment
+
+This application can be deployed to free hosting services - Vercel for the frontend and Render for the backend.
+
+### Deploy Backend to Render
+
+1. Create an account on <a href="https://render.com">Render</a>
+2. Click "New +" → "Web Service"
+3. Connect your GitHub repository
+4. Render will auto-detect the `render.yaml` configuration
+5. Set the `CORS_ORIGIN` environment variable (will be your Vercel frontend URL, e.g., `https://your-app.vercel.app`)
+6. Click "Create Web Service"
+7. Wait for the deployment to complete
+8. Copy the deployed backend URL (e.g., `https://your-app.onrender.com`)
+
+**Note**: The free tier on Render may spin down after inactivity, which can cause a delay on the first request.
+
+### Deploy Frontend to Vercel
+
+1. Create an account on <a href="https://vercel.com">Vercel</a>
+2. Click "Add New..." → "Project"
+3. Import your GitHub repository
+4. Configure the project:
+   - **Framework Preset**: Create React App
+   - **Root Directory**: `frontend`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `build`
+5. Add environment variable:
+   - Key: `REACT_APP_API_URL`
+   - Value: `https://your-backend-url.onrender.com/api` (use the URL from Render deployment)
+6. Click "Deploy"
+7. Wait for the deployment to complete
+8. Copy the deployed frontend URL
+
+### Post-Deployment Configuration
+
+After both services are deployed, update the backend CORS settings:
+
+1. Go back to your Render dashboard
+2. Navigate to your web service
+3. Go to "Environment" section
+4. Update the `CORS_ORIGIN` environment variable with your Vercel frontend URL (e.g., `https://your-app.vercel.app`)
+5. Save changes and the service will automatically redeploy
+
+### Troubleshooting
+
+**Backend Issues:**
+- If images fail to process, check that Render has sufficient memory (free tier limitations may apply)
+- Check Render logs for any error messages
+- Verify all environment variables are set correctly
+
+**Frontend Issues:**
+- If API calls fail, verify the `REACT_APP_API_URL` is set correctly with `/api` suffix
+- Check browser console for CORS errors
+- Ensure the backend `CORS_ORIGIN` is set to your Vercel URL
+
+**CORS Errors:**
+- Make sure the `CORS_ORIGIN` on Render matches your Vercel URL exactly (no trailing slash)
+- After updating environment variables, Render automatically redeploys
+
 ## 🔮 Future Enhancements
 
 - [ ] AI-based upscaling with ESRGAN
@@ -266,7 +326,6 @@ The application automatically cleans up uploaded and processed files older than 
 - [ ] Advanced image filters and adjustments
 - [ ] Batch processing queue with job management
 - [ ] Docker containerization
-- [ ] Deployment guides for various platforms
 
 ## 🤝 Contributing
 
