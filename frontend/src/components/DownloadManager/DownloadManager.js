@@ -6,9 +6,22 @@ import './DownloadManager.css';
 const DownloadManager = () => {
   const { processedImages, batchId } = useImageContext();
 
-  const handleDownloadSingle = async (filename) => {
+  const handleDownloadSingle = async (image) => {
     try {
-      await imageService.downloadImage(filename);
+      // If it's a browser AI result with a blob, download directly
+      if (image.blob) {
+        const url = URL.createObjectURL(image.blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = image.originalname || 'upscaled-image.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // Server-based image
+        await imageService.downloadImage(image.filename);
+      }
     } catch (error) {
       console.error('Error downloading image:', error);
       alert('Error downloading image: ' + (error.response?.data?.message || error.message));
@@ -22,8 +35,22 @@ const DownloadManager = () => {
     }
 
     try {
-      const filenames = processedImages.map(img => img.filename);
-      await imageService.downloadBatch(batchId || 'batch', filenames);
+      // Check if any images are browser AI results
+      const hasBrowserAI = processedImages.some(img => img.blob);
+      
+      if (hasBrowserAI) {
+        // For browser AI, download each individually
+        alert('Downloading images individually...');
+        for (const image of processedImages) {
+          await handleDownloadSingle(image);
+          // Small delay between downloads
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+      } else {
+        // Server-based images - use batch download
+        const filenames = processedImages.map(img => img.filename);
+        await imageService.downloadBatch(batchId || 'batch', filenames);
+      }
     } catch (error) {
       console.error('Error downloading batch:', error);
       alert('Error downloading batch: ' + (error.response?.data?.message || error.message));
@@ -72,7 +99,7 @@ const DownloadManager = () => {
             </div>
             <button
               className="btn-download"
-              onClick={() => handleDownloadSingle(image.filename)}
+              onClick={() => handleDownloadSingle(image)}
               title="Download this image"
             >
               ⬇️ Download

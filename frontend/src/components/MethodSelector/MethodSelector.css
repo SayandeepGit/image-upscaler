@@ -111,6 +111,21 @@
   opacity: 0.8;
 }
 
+.method-info {
+  padding: 15px;
+  background-color: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+.method-info p {
+  margin: 0;
+  color: #1565c0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 @media (max-width: 768px) {
   .method-buttons {
     grid-template-columns: 1fr;

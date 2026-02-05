@@ -72,6 +72,19 @@ class ImageService {
   }
 
   /**
+   * Upscale a single image with Cloud AI
+   */
+  async upscaleImageWithAI(filename, scale, userApiKey) {
+    const response = await api.post('/upscale/ai', {
+      filename,
+      scale: scale || 2,
+      userApiKey: userApiKey || undefined,
+    });
+
+    return response.data;
+  }
+
+  /**
    * Batch upscale multiple images
    */
   async batchUpscale(filenames, options) {

@@ -2,6 +2,7 @@ import React from 'react';
 import { ImageProvider } from './contexts/ImageContext';
 import ImageUploader from './components/ImageUploader';
 import PresetSelector from './components/PresetSelector';
+import EngineSelector from './components/EngineSelector';
 import MethodSelector from './components/MethodSelector';
 import BatchManager from './components/BatchManager';
 import PreviewComparison from './components/PreviewComparison';
@@ -29,6 +30,7 @@ function App() {
             <section className="section">
               <h2>Step 2: Configure Upscaling</h2>
               <PresetSelector />
+              <EngineSelector />
               <MethodSelector />
             </section>
 

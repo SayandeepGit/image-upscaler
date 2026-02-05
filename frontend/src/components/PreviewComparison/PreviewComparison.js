@@ -121,7 +121,7 @@ const PreviewComparison = () => {
             <h4>Upscaled</h4>
             <div className="image-wrapper" style={{ transform: `scale(${zoomLevel})` }}>
               <img
-                src={imageService.getImageUrl(currentImage.filename, true)}
+                src={currentImage.localUrl || imageService.getImageUrl(currentImage.filename, true)}
                 alt="Upscaled"
               />
             </div>
@@ -162,7 +162,7 @@ const PreviewComparison = () => {
                 src={
                   showOriginal
                     ? imageService.getImageUrl(currentImage.originalFilename || currentImage.originalname, false)
-                    : imageService.getImageUrl(currentImage.filename, true)
+                    : (currentImage.localUrl || imageService.getImageUrl(currentImage.filename, true))
                 }
                 alt={showOriginal ? 'Original' : 'Upscaled'}
               />

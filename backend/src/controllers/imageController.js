@@ -61,6 +61,75 @@ class ImageController {
   }
 
   /**
+   * Upscale a single image using Cloud AI
+   */
+  async upscaleImageWithAI(req, res, next) {
+    try {
+      const { filename, scale, userApiKey } = req.body;
+
+      if (!filename) {
+        return res.status(400).json({ error: 'Filename is required' });
+      }
+
+      const inputPath = fileManager.getFilePath(filename, false);
+
+      // Check if file exists
+      if (!fs.existsSync(inputPath)) {
+        return res.status(404).json({ error: 'File not found' });
+      }
+
+      // Check if AI upscaling is available
+      if (!aiUpscaleService.isAvailable(userApiKey)) {
+        return res.status(400).json({ 
+          error: 'Cloud AI upscaling requires an API key. Please provide your Replicate API key or configure it on the server.',
+          helpUrl: 'https://replicate.com/account/api-tokens'
+        });
+      }
+
+      // Use AI upscaling
+      const result = await aiUpscaleService.upscaleWithAI(inputPath, {
+        scale: scale || 2,
+        userApiKey
+      });
+
+      res.json({
+        success: true,
+        message: 'Image upscaled with Cloud AI successfully',
+        result
+      });
+    } catch (error) {
+      // Send appropriate HTTP status codes and user-friendly error messages
+      if (error.message?.includes('Invalid Replicate API key') || error.message?.includes('authentication')) {
+        return res.status(401).json({
+          success: false,
+          error: error.message
+        });
+      } else if (error.message?.includes('quota') || error.message?.includes('rate limit')) {
+        return res.status(429).json({
+          success: false,
+          error: error.message
+        });
+      } else if (error.message?.includes('timeout')) {
+        return res.status(408).json({
+          success: false,
+          error: error.message
+        });
+      } else if (error.message?.includes('required')) {
+        return res.status(400).json({
+          success: false,
+          error: error.message
+        });
+      }
+      
+      // Generic server error
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to upscale image with Cloud AI'
+      });
+    }
+  }
+
+  /**
    * Upscale a single image
    */
   async upscaleImage(req, res, next) {

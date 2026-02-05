@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useImageContext } from '../../contexts/ImageContext';
 import imageService from '../../services/api';
+import tfUpscaleService from '../../services/tfUpscaleService';
 import './BatchManager.css';
 
 const BatchManager = () => {
@@ -16,27 +17,142 @@ const BatchManager = () => {
   } = useImageContext();
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progressMessage, setProgressMessage] = useState('');
 
   const handleRemoveImage = (filename) => {
     removeUploadedImage(filename);
+  };
+
+  /**
+   * Process single image with Browser AI
+   */
+  const processBrowserAI = async (image) => {
+    try {
+      setProgressMessage('Loading AI model...');
+      
+      // Fetch the original image file
+      const imageUrl = image.preview || imageService.getImageUrl(image.filename);
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      // Determine scale factor from preset
+      let scale = 2;
+      if (upscalingSettings.preset === '4x') {
+        scale = 4;
+      }
+      
+      setProgressMessage(`Processing ${image.originalname}...`);
+      
+      // Upscale with TensorFlow.js
+      const upscaledBlob = await tfUpscaleService.upscaleImage(blob, scale, (progress) => {
+        if (progress.stage === 'loading') {
+          setProgressMessage('Loading AI model...');
+        } else if (progress.stage === 'processing') {
+          setProgressMessage(`Processing ${image.originalname}... ${progress.progress}%`);
+        }
+      });
+      
+      // Create a local URL for the upscaled image
+      const upscaledUrl = URL.createObjectURL(upscaledBlob);
+      
+      // Get dimensions
+      const img = await createImageBitmap(upscaledBlob);
+      
+      return {
+        success: true,
+        filename: `browser-ai-${image.filename}`,
+        originalname: image.originalname,
+        originalFilename: image.filename,
+        upscaledDimensions: {
+          width: img.width,
+          height: img.height
+        },
+        upscaledSize: upscaledBlob.size,
+        format: 'png',
+        localUrl: upscaledUrl, // Used for preview
+        blob: upscaledBlob, // Used for download
+        method: 'Browser AI'
+      };
+    } catch (error) {
+      console.error('Browser AI processing error:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Process single image with Cloud AI
+   */
+  const processCloudAI = async (image) => {
+    try {
+      setProgressMessage(`Uploading ${image.originalname} to AI service...`);
+      
+      // Determine scale factor from preset
+      let scale = 2;
+      if (upscalingSettings.preset === '4x') {
+        scale = 4;
+      }
+      
+      setProgressMessage(`AI processing ${image.originalname}...`);
+      
+      const result = await imageService.upscaleImageWithAI(
+        image.filename,
+        scale,
+        upscalingSettings.cloudApiKey
+      );
+      
+      return {
+        ...result.result,
+        originalname: image.originalname,
+        originalFilename: image.filename,
+      };
+    } catch (error) {
+      console.error('Cloud AI processing error:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Process single image with Traditional method
+   */
+  const processTraditional = async (image) => {
+    const result = await imageService.upscaleImage(image.filename, upscalingSettings);
+    return {
+      ...result.result,
+      originalname: image.originalname,
+      originalFilename: image.filename,
+    };
   };
 
   const handleProcessSingle = async (image) => {
     try {
       updateProcessingStatus(image.filename, 'processing');
       
-      const result = await imageService.upscaleImage(image.filename, upscalingSettings);
+      let result;
+      
+      if (upscalingSettings.engine === 'browser-ai') {
+        result = await processBrowserAI(image);
+      } else if (upscalingSettings.engine === 'cloud-ai') {
+        result = await processCloudAI(image);
+      } else {
+        result = await processTraditional(image);
+      }
       
       updateProcessingStatus(image.filename, 'completed');
-      addProcessedImage({
-        ...result.result,
-        originalname: image.originalname,
-        originalFilename: image.filename,
-      });
+      addProcessedImage(result);
+      setProgressMessage('');
     } catch (error) {
       console.error('Error processing image:', error);
       updateProcessingStatus(image.filename, 'error');
-      alert('Error processing image: ' + (error.response?.data?.message || error.message));
+      
+      let errorMessage = 'Error processing image';
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
+      setProgressMessage('');
     }
   };
 
@@ -56,27 +172,87 @@ const BatchManager = () => {
         updateProcessingStatus(filename, 'processing');
       });
 
-      const result = await imageService.batchUpscale(filenames, upscalingSettings);
-      
-      if (result.success) {
-        setBatchId(result.result.batchId);
-        
-        result.result.results.forEach((res) => {
-          if (res.success) {
-            updateProcessingStatus(res.originalname, 'completed');
-            addProcessedImage(res);
-          } else {
-            updateProcessingStatus(res.originalname, 'error');
+      // Process based on engine type
+      if (upscalingSettings.engine === 'browser-ai') {
+        // Process each image individually with Browser AI
+        let successCount = 0;
+        for (let i = 0; i < uploadedImages.length; i++) {
+          const image = uploadedImages[i];
+          setProgressMessage(`Processing ${i + 1} of ${uploadedImages.length}...`);
+          
+          try {
+            const result = await processBrowserAI(image);
+            updateProcessingStatus(image.filename, 'completed');
+            addProcessedImage(result);
+            successCount++;
+          } catch (error) {
+            console.error(`Error processing ${image.originalname}:`, error);
+            updateProcessingStatus(image.filename, 'error');
           }
-        });
+        }
+        
+        alert(`Processed ${successCount} of ${uploadedImages.length} images successfully!`);
+      } else if (upscalingSettings.engine === 'cloud-ai') {
+        // Process each image individually with Cloud AI
+        let successCount = 0;
+        for (let i = 0; i < uploadedImages.length; i++) {
+          const image = uploadedImages[i];
+          setProgressMessage(`Processing ${i + 1} of ${uploadedImages.length} with Cloud AI...`);
+          
+          try {
+            const result = await processCloudAI(image);
+            updateProcessingStatus(image.filename, 'completed');
+            addProcessedImage(result);
+            successCount++;
+          } catch (error) {
+            console.error(`Error processing ${image.originalname}:`, error);
+            updateProcessingStatus(image.filename, 'error');
+            
+            // Show specific error for first failure
+            if (successCount === 0) {
+              let errorMessage = 'Error processing with Cloud AI';
+              if (error.response?.data?.error) {
+                errorMessage = error.response.data.error;
+              } else if (error.message) {
+                errorMessage = error.message;
+              }
+              alert(errorMessage);
+            }
+          }
+        }
+        
+        alert(`Processed ${successCount} of ${uploadedImages.length} images successfully!`);
+      } else {
+        // Use traditional batch processing
+        const result = await imageService.batchUpscale(filenames, upscalingSettings);
+        
+        if (result.success) {
+          setBatchId(result.result.batchId);
+          
+          result.result.results.forEach((res) => {
+            if (res.success) {
+              updateProcessingStatus(res.originalname, 'completed');
+              addProcessedImage(res);
+            } else {
+              updateProcessingStatus(res.originalname, 'error');
+            }
+          });
 
-        alert(`Processed ${result.result.totalProcessed} images successfully!`);
+          alert(`Processed ${result.result.totalProcessed} images successfully!`);
+        }
       }
     } catch (error) {
       console.error('Error batch processing:', error);
-      alert('Error processing images: ' + (error.response?.data?.message || error.message));
+      let errorMessage = 'Error processing images';
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      alert(errorMessage);
     } finally {
       setIsProcessing(false);
+      setProgressMessage('');
     }
   };
 
@@ -109,6 +285,12 @@ const BatchManager = () => {
           </button>
         </div>
       </div>
+
+      {progressMessage && (
+        <div className="progress-message">
+          {progressMessage}
+        </div>
+      )}
 
       {uploadedImages.length === 0 ? (
         <div className="empty-state">

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ImageContext = createContext();
 
@@ -19,9 +19,22 @@ export const ImageProvider = ({ children }) => {
     customWidth: '',
     customHeight: '',
     useAI: false,
+    engine: 'traditional', // 'traditional', 'browser-ai', 'cloud-ai'
+    cloudApiKey: '', // Optional user API key for cloud AI
   });
   const [processedImages, setProcessedImages] = useState([]);
   const [batchId, setBatchId] = useState(null);
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      processedImages.forEach(image => {
+        if (image.localUrl) {
+          URL.revokeObjectURL(image.localUrl);
+        }
+      });
+    };
+  }, [processedImages]);
 
   const addUploadedImage = (image) => {
     setUploadedImages((prev) => [...prev, image]);
@@ -51,6 +64,12 @@ export const ImageProvider = ({ children }) => {
   };
 
   const clearProcessedImages = () => {
+    // Cleanup any object URLs to prevent memory leaks
+    processedImages.forEach(image => {
+      if (image.localUrl) {
+        URL.revokeObjectURL(image.localUrl);
+      }
+    });
     setProcessedImages([]);
   };
 

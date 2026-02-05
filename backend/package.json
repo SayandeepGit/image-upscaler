@@ -16,11 +16,13 @@
   "license": "MIT",
   "dependencies": {
     "archiver": "^6.0.1",
+    "axios": "^1.13.4",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-rate-limit": "^8.2.1",
     "multer": "^2.0.2",
+    "replicate": "^0.25.2",
     "sharp": "^0.33.0",
     "uuid": "^9.0.1"
   },
