@@ -108,7 +108,7 @@ class TFUpscaleService {
             const newHeight = img.height * scale;
             const newWidth = img.width * scale;
 
-            // Upscale using bicubic interpolation
+            // Upscale using bilinear interpolation (fast and smooth)
             const upscaled = tf.image.resizeBilinear(tensor, [newHeight, newWidth], false);
 
             if (onProgress) onProgress({ stage: 'processing', progress: 80 });

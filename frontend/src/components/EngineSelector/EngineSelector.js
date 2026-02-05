@@ -29,7 +29,7 @@ const EngineSelector = () => {
       badgeColor: 'green',
       description: 'AI-powered upscaling in your browser - Free, private, no data sent to server',
       note: webglSupported 
-        ? 'May be slower on older devices. First use downloads AI model (~5MB)'
+        ? 'May be slower on older devices. Processes entirely in your browser.'
         : 'WebGL not supported - This option is disabled',
       disabled: !webglSupported,
     },

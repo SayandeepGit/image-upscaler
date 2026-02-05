@@ -91,7 +91,7 @@ class AIUpscaleService {
       const upscaledImageUrl = output;
       const response = await axios.get(upscaledImageUrl, {
         responseType: 'arraybuffer',
-        timeout: 60000 // 60 second timeout
+        timeout: 120000 // 120 second timeout for large images
       });
 
       // Generate unique output filename

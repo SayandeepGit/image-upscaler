@@ -98,7 +98,30 @@ class ImageController {
         result
       });
     } catch (error) {
-      // Send user-friendly error messages
+      // Send appropriate HTTP status codes and user-friendly error messages
+      if (error.message?.includes('Invalid Replicate API key') || error.message?.includes('authentication')) {
+        return res.status(401).json({
+          success: false,
+          error: error.message
+        });
+      } else if (error.message?.includes('quota') || error.message?.includes('rate limit')) {
+        return res.status(429).json({
+          success: false,
+          error: error.message
+        });
+      } else if (error.message?.includes('timeout')) {
+        return res.status(408).json({
+          success: false,
+          error: error.message
+        });
+      } else if (error.message?.includes('required')) {
+        return res.status(400).json({
+          success: false,
+          error: error.message
+        });
+      }
+      
+      // Generic server error
       res.status(500).json({
         success: false,
         error: error.message || 'Failed to upscale image with Cloud AI'
