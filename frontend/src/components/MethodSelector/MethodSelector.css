@@ -98,7 +98,7 @@
 .method-button.active {
   border-color: var(--border-active);
   background-color: var(--color-green);
-  color: var(--bg-section);
+  color: var(--button-text-active);
 }
 
 .method-label {

@@ -55,7 +55,7 @@
 
 .btn-primary {
   background-color: var(--color-green);
-  color: var(--bg-section);
+  color: var(--button-text-active);
 }
 
 .btn-primary:hover:not(:disabled) {
