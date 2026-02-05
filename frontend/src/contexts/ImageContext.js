@@ -19,6 +19,8 @@ export const ImageProvider = ({ children }) => {
     customWidth: '',
     customHeight: '',
     useAI: false,
+    engine: 'traditional', // 'traditional', 'browser-ai', 'cloud-ai'
+    cloudApiKey: '', // Optional user API key for cloud AI
   });
   const [processedImages, setProcessedImages] = useState([]);
   const [batchId, setBatchId] = useState(null);

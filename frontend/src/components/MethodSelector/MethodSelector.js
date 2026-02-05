@@ -40,25 +40,8 @@ const MethodSelector = () => {
     <div className="method-selector">
       <h3>Upscaling Method</h3>
       
-      <div className="ai-toggle">
-        <label className="toggle-container">
-          <input
-            type="checkbox"
-            checked={upscalingSettings.useAI}
-            onChange={handleAIToggle}
-            disabled
-          />
-          <span className="toggle-slider"></span>
-          <span className="toggle-label">
-            AI-Based Upscaling (Coming Soon)
-          </span>
-        </label>
-        <p className="ai-info">
-          AI upscaling will provide superior quality using advanced neural networks.
-        </p>
-      </div>
-
-      {!upscalingSettings.useAI && (
+      {/* Only show traditional methods when 'traditional' engine is selected */}
+      {upscalingSettings.engine === 'traditional' && (
         <div className="method-buttons">
           {methods.map((method) => (
             <button
@@ -72,6 +55,18 @@ const MethodSelector = () => {
               <div className="method-description">{method.description}</div>
             </button>
           ))}
+        </div>
+      )}
+
+      {upscalingSettings.engine === 'browser-ai' && (
+        <div className="method-info">
+          <p>✨ Browser AI uses advanced image processing in your browser for enhanced quality.</p>
+        </div>
+      )}
+
+      {upscalingSettings.engine === 'cloud-ai' && (
+        <div className="method-info">
+          <p>🚀 Cloud AI uses Real-ESRGAN for professional-grade upscaling.</p>
         </div>
       )}
     </div>
