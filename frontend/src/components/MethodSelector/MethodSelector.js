@@ -29,11 +29,7 @@ const MethodSelector = () => {
   ];
 
   const handleMethodChange = (method) => {
-    updateUpscalingSettings({ method, useAI: false });
-  };
-
-  const handleAIToggle = () => {
-    updateUpscalingSettings({ useAI: !upscalingSettings.useAI });
+    updateUpscalingSettings({ method });
   };
 
   return (
