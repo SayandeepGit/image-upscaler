@@ -10,6 +10,7 @@ router.post('/upload-multiple', uploadLimiter, upload.array('images', 10), image
 
 // Upscaling routes
 router.post('/upscale', processLimiter, imageController.upscaleImage);
+router.post('/upscale/ai', processLimiter, imageController.upscaleImageWithAI);
 router.post('/batch-upscale', processLimiter, imageController.batchUpscale);
 
 // Download routes
