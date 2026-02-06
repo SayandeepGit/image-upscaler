@@ -250,14 +250,16 @@ const BatchManager = () => {
             if (res.success) {
               updateProcessingStatus(res.originalname, 'completed');
               addProcessedImage(res);
-              updateMultiSlotProcessor({
-                finished: [...multiSlotProcessor.finished, res.originalname]
-              });
+              updateMultiSlotProcessor(prev => ({
+                ...prev,
+                finished: [...prev.finished, res.originalname]
+              }));
             } else {
               updateProcessingStatus(res.originalname, 'error');
-              updateMultiSlotProcessor({
-                errored: [...multiSlotProcessor.errored, res.originalname]
-              });
+              updateMultiSlotProcessor(prev => ({
+                ...prev,
+                errored: [...prev.errored, res.originalname]
+              }));
             }
           });
 
