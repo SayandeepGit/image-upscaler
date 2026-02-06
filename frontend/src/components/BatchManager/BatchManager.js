@@ -14,17 +14,20 @@ const BatchManager = () => {
     addProcessedImage,
     setBatchId,
     processingStatus,
+    batchConcurrency,
+    updateBatchConcurrency,
   } = useImageContext();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressMessage, setProgressMessage] = useState('');
+  const [startTime, setStartTime] = useState(null);
   const [multiSlotProcessor, setMultiSlotProcessor] = useState({
     queued: [],
     activeSlots: [],
     finished: [],
     errored: [],
     isPaused: false,
-    maxSlots: 2
+    maxSlots: batchConcurrency
   });
 
   const handleRemoveImage = (filename) => {
@@ -41,6 +44,33 @@ const BatchManager = () => {
     return Math.floor((completed / uploadedImages.length) * 100);
   };
 
+  const calculateEstimatedTime = () => {
+    if (!startTime || uploadedImages.length === 0) return null;
+    
+    const completed = multiSlotProcessor.finished.length + multiSlotProcessor.errored.length;
+    if (completed === 0) return null;
+    
+    const elapsedMs = Date.now() - startTime;
+    const avgTimePerImage = elapsedMs / completed;
+    const remaining = uploadedImages.length - completed;
+    const estimatedRemainingMs = avgTimePerImage * remaining;
+    
+    const seconds = Math.floor(estimatedRemainingMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    
+    if (minutes > 0) {
+      return `~${minutes}m ${remainingSeconds}s remaining`;
+    }
+    return `~${seconds}s remaining`;
+  };
+
+  const handleConcurrencyChange = (newConcurrency) => {
+    const concurrency = Math.max(1, Math.min(5, parseInt(newConcurrency) || 2));
+    updateBatchConcurrency(concurrency);
+    updateMultiSlotProcessor({ maxSlots: concurrency });
+  };
+
   const resetMultiSlotProcessor = () => {
     setMultiSlotProcessor({
       queued: [],
@@ -48,8 +78,9 @@ const BatchManager = () => {
       finished: [],
       errored: [],
       isPaused: false,
-      maxSlots: 2
+      maxSlots: batchConcurrency
     });
+    setStartTime(Date.now());
   };
 
   /**
@@ -242,6 +273,7 @@ const BatchManager = () => {
     } finally {
       setIsProcessing(false);
       setProgressMessage('');
+      setStartTime(null);
     }
   };
 
@@ -333,6 +365,7 @@ const BatchManager = () => {
     }));
     setIsProcessing(false);
     setProgressMessage('Processing stopped');
+    setStartTime(null);
     setTimeout(() => setProgressMessage(''), 2000);
   };
 
@@ -358,17 +391,17 @@ const BatchManager = () => {
           </button>
           {isProcessing && !multiSlotProcessor.isPaused && (
             <button className="btn btn-warning" onClick={pauseProcessing}>
-              Pause
+              ⏸ Pause
             </button>
           )}
           {isProcessing && multiSlotProcessor.isPaused && (
             <button className="btn btn-success" onClick={resumeProcessing}>
-              Resume
+              ▶ Resume
             </button>
           )}
           {isProcessing && (
             <button className="btn btn-danger" onClick={stopProcessing}>
-              Cancel
+              ■ Cancel
             </button>
           )}
           <button
@@ -381,15 +414,62 @@ const BatchManager = () => {
         </div>
       </div>
 
+      {!isProcessing && (
+        <div className="concurrency-control">
+          <label htmlFor="concurrency">
+            Concurrent Processing:
+          </label>
+          <input
+            id="concurrency"
+            type="number"
+            min="1"
+            max="5"
+            value={batchConcurrency}
+            onChange={(e) => handleConcurrencyChange(e.target.value)}
+            disabled={isProcessing}
+            className="concurrency-input"
+          />
+          <span className="concurrency-label">
+            {batchConcurrency} image{batchConcurrency > 1 ? 's' : ''} at once
+          </span>
+        </div>
+      )}
+
       {progressMessage && (
         <div className="progress-message">
-          {progressMessage}
+          <div className="progress-text">{progressMessage}</div>
           {isProcessing && (
-            <div className="completion-indicator">
-              {calculateCompletionRate()}% complete
-              {' '}({multiSlotProcessor.finished.length + multiSlotProcessor.errored.length}/{uploadedImages.length})
+            <div className="progress-details">
+              <div className="completion-indicator">
+                {calculateCompletionRate()}% complete
+                {' '}({multiSlotProcessor.finished.length + multiSlotProcessor.errored.length}/{uploadedImages.length})
+              </div>
+              {calculateEstimatedTime() && (
+                <div className="time-estimate">{calculateEstimatedTime()}</div>
+              )}
             </div>
           )}
+        </div>
+      )}
+
+      {isProcessing && (
+        <div className="batch-status-panel">
+          <div className="status-item">
+            <span className="status-icon queued">⏳</span>
+            <span className="status-text">Queued: {multiSlotProcessor.queued.length}</span>
+          </div>
+          <div className="status-item">
+            <span className="status-icon processing">⚙️</span>
+            <span className="status-text">Processing: {multiSlotProcessor.activeSlots.length}</span>
+          </div>
+          <div className="status-item">
+            <span className="status-icon completed">✓</span>
+            <span className="status-text">Completed: {multiSlotProcessor.finished.length}</span>
+          </div>
+          <div className="status-item">
+            <span className="status-icon failed">✕</span>
+            <span className="status-text">Failed: {multiSlotProcessor.errored.length}</span>
+          </div>
         </div>
       )}
 

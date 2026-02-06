@@ -6,7 +6,7 @@ import { saveAs } from 'file-saver';
 import './DownloadManager.css';
 
 const DownloadManager = () => {
-  const { processedImages, batchId, upscalingSettings } = useImageContext();
+  const { processedImages, upscalingSettings } = useImageContext();
   const [zipBuilder, setZipBuilder] = useState(null);
 
   const handleDownloadSingle = async (image) => {

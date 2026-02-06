@@ -308,6 +308,40 @@ class TFUpscaleService {
   }
 
   /**
+   * Get cache status
+   */
+  async getCacheStatus() {
+    const metrics = await this.getStorageMetrics();
+    const storedConfig = await this.retrieveBackendFromStorage();
+    
+    return {
+      isLoaded: this.modelLoaded,
+      cacheSize: metrics.estimatedBytes,
+      lastCached: storedConfig?.createdAt || null,
+      isLoading: this.isLoading
+    };
+  }
+
+  /**
+   * Preload models for faster processing
+   */
+  async preloadModels() {
+    if (this.modelLoaded) {
+      return true;
+    }
+    return await this.initialize();
+  }
+
+  /**
+   * Clear cache
+   */
+  async clearCache() {
+    await this.eraseStoredBackend();
+    this.modelLoaded = false;
+    return true;
+  }
+
+  /**
    * Clean up resources
    */
   dispose() {

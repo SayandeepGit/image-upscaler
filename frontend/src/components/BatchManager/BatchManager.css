@@ -34,6 +34,30 @@
   animation: pulse 1.5s ease-in-out infinite;
 }
 
+.progress-text {
+  margin-bottom: 8px;
+}
+
+.progress-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.completion-indicator {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-green);
+}
+
+.time-estimate {
+  font-size: 12px;
+  color: var(--text-sub);
+  font-style: italic;
+}
+
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
@@ -70,6 +94,102 @@
 
 .btn-secondary:hover:not(:disabled) {
   background-color: #da190b;
+}
+
+.btn-warning {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background-color: #e0a800;
+}
+
+.btn-success {
+  background-color: var(--color-green);
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-danger {
+  background-color: #f44336;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #da190b;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.concurrency-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+  padding: 12px 15px;
+  background: var(--bg-alt);
+  border-radius: 6px;
+}
+
+.concurrency-control label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.concurrency-input {
+  width: 60px;
+  padding: 6px 10px;
+  border: 2px solid var(--border-color);
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: var(--input-bg);
+  color: var(--text-main);
+  text-align: center;
+}
+
+.concurrency-input:focus {
+  outline: none;
+  border-color: var(--border-active);
+}
+
+.concurrency-label {
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.batch-status-panel {
+  display: flex;
+  justify-content: space-around;
+  padding: 15px;
+  margin-bottom: 15px;
+  background: var(--bg-alt);
+  border-radius: 8px;
+  border: 2px solid var(--border-color);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-icon {
+  font-size: 18px;
+}
+
+.status-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
 }
 
 .btn:disabled {
@@ -218,6 +338,16 @@
 
   .batch-actions button {
     flex: 1;
+  }
+
+  .concurrency-control {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .batch-status-panel {
+    flex-wrap: wrap;
+    gap: 12px;
   }
 
   .image-grid {
