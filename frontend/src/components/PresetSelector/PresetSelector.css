@@ -4,7 +4,7 @@
 
 .preset-selector h3 {
   margin-bottom: 15px;
-  color: #333;
+  color: var(--text-main);
   font-size: 20px;
 }
 
@@ -18,23 +18,24 @@
   flex: 1;
   min-width: 120px;
   padding: 15px 10px;
-  border: 2px solid #ddd;
+  border: 2px solid var(--border-color);
   border-radius: 8px;
-  background-color: white;
+  background-color: var(--bg-section);
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
+  color: var(--text-main);
 }
 
 .preset-button:hover {
-  border-color: #4CAF50;
-  background-color: #f0f8f0;
+  border-color: var(--border-active);
+  background-color: var(--hover-bg);
 }
 
 .preset-button.active {
-  border-color: #4CAF50;
-  background-color: #4CAF50;
-  color: white;
+  border-color: var(--border-active);
+  background-color: var(--color-green);
+  color: var(--button-text-active);
 }
 
 .preset-label {
@@ -65,21 +66,23 @@
   margin-bottom: 5px;
   font-size: 14px;
   font-weight: 500;
-  color: #555;
+  color: var(--text-sub);
 }
 
 .input-group input {
   width: 100%;
   padding: 10px;
-  border: 2px solid #ddd;
+  border: 2px solid var(--border-color);
   border-radius: 5px;
   font-size: 14px;
   transition: border-color 0.3s ease;
+  background-color: var(--input-bg);
+  color: var(--text-main);
 }
 
 .input-group input:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: var(--border-active);
 }
 
 @media (max-width: 768px) {

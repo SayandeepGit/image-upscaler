@@ -7,12 +7,17 @@ import MethodSelector from './components/MethodSelector';
 import BatchManager from './components/BatchManager';
 import PreviewComparison from './components/PreviewComparison';
 import DownloadManager from './components/DownloadManager';
+import PaletteToggle from './components/PaletteToggle';
+import { useColorPalette } from './hooks/useColorPalette';
 import './App.css';
 
 function App() {
+  const { palette, togglePalette } = useColorPalette();
+  
   return (
     <ImageProvider>
       <div className="App">
+        <PaletteToggle palette={palette} onToggle={togglePalette} />
         <header className="app-header">
           <h1>🖼️ Image Upscaler</h1>
           <p className="app-subtitle">

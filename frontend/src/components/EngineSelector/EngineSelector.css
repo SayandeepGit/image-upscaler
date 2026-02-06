@@ -1,14 +1,14 @@
 .engine-selector {
-  background: white;
+  background: var(--bg-section);
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--shadow-sm);
   margin-bottom: 20px;
 }
 
 .engine-selector h3 {
   margin: 0 0 15px 0;
-  color: #333;
+  color: var(--text-main);
   font-size: 1.2rem;
 }
 
@@ -23,27 +23,27 @@
   display: flex;
   align-items: flex-start;
   padding: 15px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: white;
+  background: var(--bg-section);
 }
 
 .engine-option:hover:not(.disabled) {
-  border-color: #4a90e2;
-  background: #f8f9fa;
+  border-color: var(--border-active);
+  background: var(--hover-bg);
 }
 
 .engine-option.selected {
-  border-color: #4a90e2;
-  background: #e3f2fd;
+  border-color: var(--border-active);
+  background: var(--hover-bg);
 }
 
 .engine-option.disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: #f5f5f5;
+  background: var(--bg-alt);
 }
 
 .engine-option input[type="radio"] {
@@ -71,7 +71,7 @@
 .engine-label {
   font-weight: 600;
   font-size: 1rem;
-  color: #333;
+  color: var(--text-main);
 }
 
 .engine-badge {
@@ -84,23 +84,23 @@
 }
 
 .engine-badge.blue {
-  background: #2196f3;
+  background: var(--color-blue);
   color: white;
 }
 
 .engine-badge.green {
-  background: #4caf50;
+  background: var(--color-green);
   color: white;
 }
 
 .engine-badge.purple {
-  background: #9c27b0;
+  background: #a78bfa;
   color: white;
 }
 
 .engine-description {
   margin: 0 0 8px 0;
-  color: #666;
+  color: var(--text-sub);
   font-size: 0.9rem;
   line-height: 1.4;
 }
@@ -108,60 +108,62 @@
 .engine-note {
   margin: 0;
   padding: 8px 10px;
-  background: #f0f7ff;
-  border-left: 3px solid #4a90e2;
+  background: var(--bg-alt);
+  border-left: 3px solid var(--color-blue);
   font-size: 0.85rem;
-  color: #555;
+  color: var(--text-sub);
   border-radius: 4px;
 }
 
 .engine-note.error {
-  background: #fff3e0;
+  background: var(--bg-alt);
   border-left-color: #ff9800;
 }
 
 .api-key-section {
   margin-top: 15px;
   padding: 15px;
-  background: #f8f9fa;
+  background: var(--bg-alt);
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-color);
 }
 
 .api-key-section label {
   display: block;
   font-weight: 600;
   margin-bottom: 8px;
-  color: #333;
+  color: var(--text-main);
   font-size: 0.95rem;
 }
 
 .api-key-input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 0.95rem;
   font-family: 'Courier New', monospace;
   transition: border-color 0.2s ease;
   box-sizing: border-box;
+  background-color: var(--input-bg);
+  color: var(--text-main);
 }
 
 .api-key-input:focus {
   outline: none;
-  border-color: #4a90e2;
-  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+  border-color: var(--border-active);
+  box-shadow: 0 0 0 3px var(--shadow-sm);
 }
 
 .api-key-help {
   margin: 8px 0 0 0;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-sub);
   line-height: 1.4;
 }
 
 .api-key-help a {
-  color: #4a90e2;
+  color: var(--color-blue);
   text-decoration: none;
   font-weight: 600;
 }

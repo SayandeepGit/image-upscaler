@@ -1,0 +1,41 @@
+.palette-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid var(--toggle-border);
+  background: var(--toggle-bg);
+  color: var(--toggle-icon);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px var(--toggle-shadow);
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.palette-toggle:hover {
+  transform: scale(1.1) rotate(15deg);
+  box-shadow: 0 5px 15px var(--toggle-shadow-hover);
+}
+
+.palette-toggle:active {
+  transform: scale(0.95);
+}
+
+.palette-toggle:focus-visible {
+  outline: 3px solid var(--toggle-focus);
+  outline-offset: 3px;
+}
+
+@media (max-width: 768px) {
+  .palette-toggle {
+    width: 44px;
+    height: 44px;
+    top: 16px;
+    right: 16px;
+  }
+}
