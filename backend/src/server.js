@@ -75,13 +75,16 @@ app.listen(PORT, () => {
           let basePath = '/api'; // Default fallback
           try {
             const regexSource = middleware.regexp.source;
-            // Match patterns like ^\/api\\/?(?=\/|$)
+            // Match Express router path patterns like: ^\/api\\/?(?=\/|$)
+            // This extracts the base path (e.g., "api") from the router's regex
+            // Example: "^\/api\\/?(?=\/|$)" -> "/api"
             const pathMatch = regexSource.match(/\^\\?\/?([^\\?]+)/);
             if (pathMatch && pathMatch[1]) {
               basePath = '/' + pathMatch[1].replace(/\\\//g, '/').replace(/\\/g, '');
             }
           } catch (e) {
             // Fallback to /api if parsing fails
+            console.warn('Failed to parse router path, using fallback:', e.message);
           }
           const fullPath = basePath + handler.route.path;
           routes.push({ methods, path: fullPath });
@@ -90,11 +93,16 @@ app.listen(PORT, () => {
     }
   });
   
-  // Calculate max method length for proper alignment
-  const maxMethodLength = Math.max(...routes.map(r => r.methods.length), 6);
-  const padding = Math.max(maxMethodLength + 2, 10);
-  
-  routes.forEach(route => {
-    console.log(`  ${route.methods.padEnd(padding)} ${route.path}`);
-  });
+  // Check if any routes were found
+  if (routes.length === 0) {
+    console.warn('Warning: No routes were registered');
+  } else {
+    // Calculate max method length for proper alignment
+    const maxMethodLength = Math.max(...routes.map(r => r.methods.length), 6);
+    const padding = Math.max(maxMethodLength + 2, 10);
+    
+    routes.forEach(route => {
+      console.log(`  ${route.methods.padEnd(padding)} ${route.path}`);
+    });
+  }
 });
