@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useImageContext } from '../../contexts/ImageContext';
+import { useToast } from '../../contexts/ToastContext';
 import imageService from '../../services/api';
 import tfUpscaleService from '../../services/tfUpscaleService';
 import './BatchManager.css';
@@ -17,6 +18,8 @@ const BatchManager = () => {
     batchConcurrency,
     updateBatchConcurrency,
   } = useImageContext();
+
+  const { success, error: showError } = useToast();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressMessage, setProgressMessage] = useState('');
@@ -200,25 +203,25 @@ const BatchManager = () => {
       updateProcessingStatus(image.filename, 'completed');
       addProcessedImage(result);
       setProgressMessage('');
-    } catch (error) {
-      console.error('Error processing image:', error);
+    } catch (err) {
+      console.error('Error processing image:', err);
       updateProcessingStatus(image.filename, 'error');
       
       let errorMessage = 'Error processing image';
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.message) {
+        errorMessage = err.message;
       }
       
-      alert(errorMessage);
+      showError(errorMessage);
       setProgressMessage('');
     }
   };
 
   const handleProcessAll = async () => {
     if (uploadedImages.length === 0) {
-      alert('No images to process');
+      showError('No images to process');
       return;
     }
 
@@ -258,18 +261,18 @@ const BatchManager = () => {
             }
           });
 
-          alert(`Processed ${result.result.totalProcessed} images successfully!`);
+          success(`Processed ${result.result.totalProcessed} images successfully!`);
         }
       }
-    } catch (error) {
-      console.error('Error batch processing:', error);
+    } catch (err) {
+      console.error('Error batch processing:', err);
       let errorMessage = 'Error processing images';
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.message) {
+        errorMessage = err.message;
       }
-      alert(errorMessage);
+      showError(errorMessage);
     } finally {
       setIsProcessing(false);
       setProgressMessage('');
@@ -337,7 +340,14 @@ const BatchManager = () => {
 
     await Promise.all(slots);
     
-    alert(`Completed ${multiSlotProcessor.finished.length} of ${images.length} images!`);
+    const completedCount = multiSlotProcessor.finished.length;
+    const failedCount = multiSlotProcessor.errored.length;
+    
+    if (failedCount > 0) {
+      showError(`Completed ${completedCount} of ${images.length} images. ${failedCount} failed.`);
+    } else {
+      success(`Successfully processed ${completedCount} of ${images.length} images!`);
+    }
   };
 
   const pauseProcessing = () => {

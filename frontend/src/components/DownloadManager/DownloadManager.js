@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useImageContext } from '../../contexts/ImageContext';
+import { useToast } from '../../contexts/ToastContext';
 import imageService from '../../services/api';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -7,6 +8,7 @@ import './DownloadManager.css';
 
 const DownloadManager = () => {
   const { processedImages, upscalingSettings } = useImageContext();
+  const { success, error: showError } = useToast();
   const [zipBuilder, setZipBuilder] = useState(null);
 
   const handleDownloadSingle = async (image) => {
@@ -25,9 +27,9 @@ const DownloadManager = () => {
         // Server-based image
         await imageService.downloadImage(image.filename);
       }
-    } catch (error) {
-      console.error('Error downloading image:', error);
-      alert('Error downloading image: ' + (error.response?.data?.message || error.message));
+    } catch (err) {
+      console.error('Error downloading image:', err);
+      showError('Error downloading image: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -41,7 +43,7 @@ const DownloadManager = () => {
 
   const handleDownloadAll = async () => {
     if (!processedImages.length) {
-      alert('No processed images to download');
+      showError('No processed images to download');
       return;
     }
 
@@ -105,9 +107,10 @@ const DownloadManager = () => {
       saveAs(finalBlob, zipName);
 
       setZipBuilder(null);
-    } catch (error) {
-      console.error('Zip creation failed:', error);
-      alert(`Archive creation failed: ${error.message}`);
+      success(`ZIP file downloaded successfully! (${processedImages.length} images)`);
+    } catch (err) {
+      console.error('Zip creation failed:', err);
+      showError(`Archive creation failed: ${err.message}`);
       setZipBuilder(null);
     }
   };

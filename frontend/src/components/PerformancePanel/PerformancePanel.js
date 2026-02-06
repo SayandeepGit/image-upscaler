@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import tfUpscaleService from '../../services/tfUpscaleService';
+import { useToast } from '../../contexts/ToastContext';
 import './PerformancePanel.css';
 
 const PerformancePanel = () => {
+  const { success, error } = useToast();
   const [cacheStatus, setCacheStatus] = useState({
     isLoaded: false,
     cacheSize: 0,
@@ -28,10 +30,10 @@ const PerformancePanel = () => {
     try {
       await tfUpscaleService.preloadModels();
       await checkCacheStatus();
-      alert('AI models preloaded successfully!');
-    } catch (error) {
-      console.error('Failed to preload models:', error);
-      alert('Failed to preload models: ' + error.message);
+      success('AI models preloaded successfully!');
+    } catch (err) {
+      console.error('Failed to preload models:', err);
+      error('Failed to preload models: ' + err.message);
     } finally {
       setCacheStatus(prev => ({ ...prev, isLoading: false }));
     }
@@ -45,10 +47,10 @@ const PerformancePanel = () => {
     try {
       await tfUpscaleService.clearCache();
       await checkCacheStatus();
-      alert('Cache cleared successfully!');
-    } catch (error) {
-      console.error('Failed to clear cache:', error);
-      alert('Failed to clear cache: ' + error.message);
+      success('Cache cleared successfully!');
+    } catch (err) {
+      console.error('Failed to clear cache:', err);
+      error('Failed to clear cache: ' + err.message);
     }
   };
 
