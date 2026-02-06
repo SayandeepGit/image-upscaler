@@ -89,8 +89,8 @@ class ImageFilterPipeline {
     const pixels = imageData.data;
     
     for (let i = 0; i < pixels.length; i += 4) {
-      const avg = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
-      pixels[i] = pixels[i + 1] = pixels[i + 2] = avg;
+      const luminance = (pixels[i] * 0.299) + (pixels[i + 1] * 0.587) + (pixels[i + 2] * 0.114);
+      pixels[i] = pixels[i + 1] = pixels[i + 2] = luminance;
     }
     
     this.ctx.putImageData(imageData, 0, 0);

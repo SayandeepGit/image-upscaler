@@ -248,17 +248,22 @@ const BatchManager = () => {
   const executeMultiSlotProcessing = async (images) => {
     const slots = [];
     let nextIdx = 0;
-    let processor = { ...multiSlotProcessor };
 
     const processSlot = async (slotId) => {
-      while (nextIdx < images.length && !processor.isPaused) {
+      while (nextIdx < images.length) {
+        if (multiSlotProcessor.isPaused) {
+          break;
+        }
+        
         const idx = nextIdx++;
         const img = images[idx];
         
         if (!img) break;
 
-        processor.activeSlots = [...processor.activeSlots, img.filename];
-        updateMultiSlotProcessor(processor);
+        updateMultiSlotProcessor(prev => ({
+          ...prev,
+          activeSlots: [...prev.activeSlots, img.filename]
+        }));
 
         setProgressMessage(`[Slot ${slotId}] ${idx + 1}/${images.length}: ${img.originalname}`);
         
@@ -274,49 +279,58 @@ const BatchManager = () => {
           updateProcessingStatus(img.filename, 'completed');
           addProcessedImage(output);
           
-          processor.activeSlots = processor.activeSlots.filter(f => f !== img.filename);
-          processor.finished = [...processor.finished, img.filename];
-          processor.queued = processor.queued.filter(f => f !== img.filename);
-          updateMultiSlotProcessor(processor);
+          updateMultiSlotProcessor(prev => ({
+            ...prev,
+            activeSlots: prev.activeSlots.filter(f => f !== img.filename),
+            finished: [...prev.finished, img.filename],
+            queued: prev.queued.filter(f => f !== img.filename)
+          }));
         } catch (err) {
           console.error(`Slot ${slotId} failed on ${img.originalname}:`, err);
           updateProcessingStatus(img.filename, 'error');
           
-          processor.activeSlots = processor.activeSlots.filter(f => f !== img.filename);
-          processor.errored = [...processor.errored, img.filename];
-          processor.queued = processor.queued.filter(f => f !== img.filename);
-          updateMultiSlotProcessor(processor);
+          updateMultiSlotProcessor(prev => ({
+            ...prev,
+            activeSlots: prev.activeSlots.filter(f => f !== img.filename),
+            errored: [...prev.errored, img.filename],
+            queued: prev.queued.filter(f => f !== img.filename)
+          }));
         }
       }
     };
 
-    for (let slot = 0; slot < processor.maxSlots; slot++) {
+    for (let slot = 0; slot < multiSlotProcessor.maxSlots; slot++) {
       slots.push(processSlot(slot + 1));
     }
 
     await Promise.all(slots);
     
-    alert(`Completed ${processor.finished.length} of ${images.length} images!`);
+    alert(`Completed ${multiSlotProcessor.finished.length} of ${images.length} images!`);
   };
 
   const pauseProcessing = () => {
-    updateMultiSlotProcessor({ isPaused: true });
+    updateMultiSlotProcessor(prev => ({ ...prev, isPaused: true }));
     setProgressMessage('Pausing after active tasks complete...');
   };
 
-  const resumeProcessing = () => {
-    updateMultiSlotProcessor({ isPaused: false });
+  const resumeProcessing = async () => {
+    updateMultiSlotProcessor(prev => ({ ...prev, isPaused: false }));
     setProgressMessage('Resuming processing...');
     if (multiSlotProcessor.queued.length > 0) {
       const remaining = uploadedImages.filter(img => 
         multiSlotProcessor.queued.includes(img.filename)
       );
-      executeMultiSlotProcessing(remaining);
+      await executeMultiSlotProcessing(remaining);
     }
   };
 
   const stopProcessing = () => {
-    updateMultiSlotProcessor({ isPaused: true, queued: [], activeSlots: [] });
+    updateMultiSlotProcessor(prev => ({ 
+      ...prev, 
+      isPaused: true, 
+      queued: [], 
+      activeSlots: [] 
+    }));
     setIsProcessing(false);
     setProgressMessage('Processing stopped');
     setTimeout(() => setProgressMessage(''), 2000);

@@ -161,19 +161,18 @@ class TFUpscaleService {
 
     try {
       const storedConfig = await this.retrieveBackendFromStorage();
+      let targetBackend = 'cpu';
       
-      if (storedConfig) {
-        console.log('Found stored backend configuration');
+      if (storedConfig && storedConfig.backendName) {
+        console.log(`Using cached backend preference: ${storedConfig.backendName}`);
+        targetBackend = storedConfig.backendName;
         this.loadedFromStorage = true;
+      } else if (this.checkWebGLSupport()) {
+        targetBackend = 'webgl';
       }
 
-      if (this.checkWebGLSupport()) {
-        await tf.setBackend('webgl');
-        console.log('TensorFlow.js using WebGL backend');
-      } else {
-        await tf.setBackend('cpu');
-        console.log('TensorFlow.js using CPU backend (WebGL not available)');
-      }
+      await tf.setBackend(targetBackend);
+      console.log(`TensorFlow.js using ${targetBackend} backend`);
 
       await tf.ready();
       

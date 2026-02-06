@@ -35,7 +35,7 @@ const DownloadManager = () => {
     const basename = imgItem.originalname?.split('.').slice(0, -1).join('.') || `image${position}`;
     const scaleLabel = upscalingSettings.preset || '2x';
     const engineUsed = imgItem.method || upscalingSettings.engine || 'traditional';
-    const techSuffix = engineUsed.match(/ai/i) ? 'ai' : 'trad';
+    const techSuffix = (typeof engineUsed === 'string' && engineUsed.match(/ai/i)) ? 'ai' : 'trad';
     return `${basename}_upscaled_${scaleLabel}_${techSuffix}.${imgItem.format || 'png'}`;
   };
 
@@ -45,9 +45,8 @@ const DownloadManager = () => {
       return;
     }
 
-    const collector = { total: processedImages.length, collected: 0, phase: 'starting' };
-    setZipBuilder(collector);
-
+    const progressTracker = { total: processedImages.length, collected: 0, phase: 'starting' };
+    
     try {
       const zipContainer = new JSZip();
       const targetFolder = zipContainer.folder('upscaled');
@@ -57,9 +56,11 @@ const DownloadManager = () => {
         const imgItem = processedImages[idx];
         const targetName = constructFileName(imgItem, idx + 1);
         
-        collector.collected = idx + 1;
-        collector.phase = `collecting ${targetName}`;
-        setZipBuilder({...collector});
+        progressTracker.collected = idx + 1;
+        progressTracker.phase = `collecting ${targetName}`;
+        if (idx % 3 === 0 || idx === processedImages.length - 1) {
+          setZipBuilder({...progressTracker});
+        }
 
         let imageBlob = null;
 
@@ -88,14 +89,14 @@ const DownloadManager = () => {
         throw new Error('Could not collect any images for archive');
       }
 
-      collector.phase = 'building archive';
-      setZipBuilder({...collector});
+      progressTracker.phase = 'building archive';
+      setZipBuilder({...progressTracker});
 
       const finalBlob = await zipContainer.generateAsync(
         { type: 'blob', compression: 'DEFLATE' },
         (progressData) => {
-          collector.phase = `compressing ${Math.round(progressData.percent)}%`;
-          setZipBuilder({...collector});
+          progressTracker.phase = `compressing ${Math.round(progressData.percent)}%`;
+          setZipBuilder({...progressTracker});
         }
       );
 
