@@ -65,21 +65,36 @@ app.listen(PORT, () => {
     if (middleware.route) {
       // Routes registered directly on the app
       const methods = Object.keys(middleware.route.methods).map(m => m.toUpperCase()).join(', ');
-      routes.push(`  ${methods.padEnd(6)} ${middleware.route.path}`);
+      routes.push({ methods, path: middleware.route.path });
     } else if (middleware.name === 'router') {
       // Routes registered through routers
       middleware.handle.stack.forEach((handler) => {
         if (handler.route) {
           const methods = Object.keys(handler.route.methods).map(m => m.toUpperCase()).join(', ');
-          const path = middleware.regexp.source
-            .replace('\\/?', '')
-            .replace('(?=\\/|$)', '')
-            .replace(/\\\//g, '/') + handler.route.path;
-          routes.push(`  ${methods.padEnd(6)} ${path.replace(/\^/g, '')}`);
+          // Extract base path from router regex - handle common patterns
+          let basePath = '/api'; // Default fallback
+          try {
+            const regexSource = middleware.regexp.source;
+            // Match patterns like ^\/api\\/?(?=\/|$)
+            const pathMatch = regexSource.match(/\^\\?\/?([^\\?]+)/);
+            if (pathMatch && pathMatch[1]) {
+              basePath = '/' + pathMatch[1].replace(/\\\//g, '/').replace(/\\/g, '');
+            }
+          } catch (e) {
+            // Fallback to /api if parsing fails
+          }
+          const fullPath = basePath + handler.route.path;
+          routes.push({ methods, path: fullPath });
         }
       });
     }
   });
   
-  routes.forEach(route => console.log(route));
+  // Calculate max method length for proper alignment
+  const maxMethodLength = Math.max(...routes.map(r => r.methods.length), 6);
+  const padding = Math.max(maxMethodLength + 2, 10);
+  
+  routes.forEach(route => {
+    console.log(`  ${route.methods.padEnd(padding)} ${route.path}`);
+  });
 });
