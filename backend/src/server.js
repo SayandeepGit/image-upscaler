@@ -57,14 +57,29 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log('Registered routes:');
-  console.log('  POST /api/upload');
-  console.log('  POST /api/upload-multiple');
-  console.log('  POST /api/upscale');
-  console.log('  POST /api/upscale/ai');
-  console.log('  POST /api/batch-upscale');
-  console.log('  GET  /api/download/:filename');
-  console.log('  POST /api/download-batch/:batchId');
-  console.log('  GET  /api/file-info/:filename');
-  console.log('  GET  /api/health');
-  console.log('  GET  /health (legacy)');
+  
+  // Dynamically log all registered routes
+  const routes = [];
+  
+  app._router.stack.forEach((middleware) => {
+    if (middleware.route) {
+      // Routes registered directly on the app
+      const methods = Object.keys(middleware.route.methods).map(m => m.toUpperCase()).join(', ');
+      routes.push(`  ${methods.padEnd(6)} ${middleware.route.path}`);
+    } else if (middleware.name === 'router') {
+      // Routes registered through routers
+      middleware.handle.stack.forEach((handler) => {
+        if (handler.route) {
+          const methods = Object.keys(handler.route.methods).map(m => m.toUpperCase()).join(', ');
+          const path = middleware.regexp.source
+            .replace('\\/?', '')
+            .replace('(?=\\/|$)', '')
+            .replace(/\\\//g, '/') + handler.route.path;
+          routes.push(`  ${methods.padEnd(6)} ${path.replace(/\^/g, '')}`);
+        }
+      });
+    }
+  });
+  
+  routes.forEach(route => console.log(route));
 });
