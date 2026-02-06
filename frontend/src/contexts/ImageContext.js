@@ -24,6 +24,17 @@ export const ImageProvider = ({ children }) => {
   });
   const [processedImages, setProcessedImages] = useState([]);
   const [batchId, setBatchId] = useState(null);
+  const [filterSettings, setFilterSettings] = useState({
+    brightness: 0,
+    contrast: 0,
+    saturation: 0,
+    grayscale: false,
+    sepia: false,
+    blur: false,
+    timing: 'before', // 'before', 'after', 'both'
+    preset: 'none' // 'none', 'vibrant', 'blackwhite', 'vintage', 'custom'
+  });
+  const [batchConcurrency, setBatchConcurrency] = useState(2);
 
   // Cleanup object URLs on unmount
   useEffect(() => {
@@ -80,6 +91,17 @@ export const ImageProvider = ({ children }) => {
     }));
   };
 
+  const updateFilterSettings = (settings) => {
+    setFilterSettings((prev) => ({
+      ...prev,
+      ...settings,
+    }));
+  };
+
+  const updateBatchConcurrency = (concurrency) => {
+    setBatchConcurrency(concurrency);
+  };
+
   const value = {
     uploadedImages,
     addUploadedImage,
@@ -95,6 +117,10 @@ export const ImageProvider = ({ children }) => {
     clearProcessedImages,
     batchId,
     setBatchId,
+    filterSettings,
+    updateFilterSettings,
+    batchConcurrency,
+    updateBatchConcurrency,
   };
 
   return <ImageContext.Provider value={value}>{children}</ImageContext.Provider>;

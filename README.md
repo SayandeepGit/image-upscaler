@@ -77,6 +77,54 @@ Choose from **three powerful upscaling engines** to match your needs:
 - 📐 Display resolution and file size information
 - ↔️ Toggle between original and upscaled versions
 
+## 🎉 New Features
+
+### AI Model Caching (Performance Optimization)
+- 🚀 **Smart Caching**: AI models are automatically cached in browser storage
+- ⚡ **Lightning Fast Reloads**: First load ~5 seconds, cached loads <1 second
+- 📊 **Performance Panel**: View cache status and model loading times
+- 🔄 **Preload & Clear**: Option to preload models or clear cache when needed
+- 💾 **Automatic Management**: Models persist across sessions for instant access
+
+### Enhanced Batch Processing
+- ⚙️ **Configurable Concurrency**: Process 1-5 images simultaneously for optimal performance
+- ⏸️ **Full Control**: Pause, Resume, and Cancel batch operations anytime
+- 📈 **Real-Time Progress**: Live tracking with percentage complete and time estimates
+- 🎯 **Individual Status**: Track each image's state (queued/processing/completed/failed)
+- 🔄 **Flexible Processing**: Adjust settings during batch operations
+
+### Image Filters & Adjustments
+- 🎨 **Apply Before or After**: Filter images before upscaling or enhance after processing
+- 🔧 **Professional Adjustments**: 
+  - ☀️ Brightness control
+  - 🌓 Contrast enhancement
+  - 🌈 Saturation adjustment
+- ✨ **Creative Effects**:
+  - Grayscale conversion
+  - Sepia tone
+  - Blur effect
+- 🎭 **Quick Presets**:
+  - None (original)
+  - Vibrant (enhanced colors)
+  - Black & White
+  - Vintage (nostalgic look)
+- 👁️ **Live Preview**: See filter effects before applying
+- 🔄 **Easy Reset**: Revert to original settings instantly
+
+### Smart ZIP Downloads
+- 📦 **Browser AI Support**: Download Browser AI results as ZIP files (client-side creation)
+- 🏷️ **Intelligent Naming**: Filenames include processing method and settings
+- 📊 **Progress Tracking**: Monitor ZIP creation progress in real-time
+- 🎯 **Flexible Selection**: Download all images or select specific ones
+- 💨 **Fast & Efficient**: No server upload needed for Browser AI results
+
+### Toast Notifications
+- 💬 **Non-Intrusive Alerts**: Clean, minimal notifications that don't block your workflow
+- 🎨 **Status Types**: Success, error, warning, and info messages
+- ⏱️ **Auto-Dismiss**: Notifications automatically fade after a few seconds
+- 📍 **Smart Positioning**: Stay visible but out of the way
+- 🎯 **Clear Feedback**: Instant confirmation of actions and operations
+
 ## 🛠️ Technical Stack
 
 - **Frontend**: React 18
@@ -180,12 +228,22 @@ The frontend will start on `http://localhost:3000` and open in your browser.
 
 ### Using Browser AI (Free & Private)
 1. Upload your images
-2. Select your desired resolution preset (2x, 4x, HD, 4K, or Custom)
-3. In **Upscaling Engine**, select **Browser AI**
-4. Click **Process All**
-5. First time: AI model will download (~5MB, cached for future use)
-6. Wait for processing (happens entirely in your browser)
-7. Download your upscaled images
+2. **Optional**: Apply filters/adjustments before processing
+3. Select your desired resolution preset (2x, 4x, HD, 4K, or Custom)
+4. In **Upscaling Engine**, select **Browser AI**
+5. **Optional**: Adjust batch concurrency (1-5 simultaneous images)
+6. Click **Process All**
+7. First time: AI model will download (~5MB, cached for future use)
+8. Monitor progress with real-time updates and time estimates
+9. Use Pause/Resume/Cancel controls as needed
+10. **Optional**: Apply filters/adjustments after processing
+11. Download individual images or all as a ZIP file
+
+**Performance Tips:**
+- Models are cached automatically - subsequent uses are 5x faster!
+- Check the Performance Panel to view cache status
+- Use model preloading for instant processing
+- Adjust concurrency based on your system capabilities
 
 **Requirements:**
 - Modern browser with WebGL support (Chrome, Firefox, Edge, Safari)
@@ -194,12 +252,16 @@ The frontend will start on `http://localhost:3000` and open in your browser.
 
 ### Using Cloud AI (Best Quality)
 1. Upload your images
-2. Select your desired resolution preset (2x or 4x recommended)
-3. In **Upscaling Engine**, select **Cloud AI**
-4. (Optional) Enter your Replicate API key for guaranteed access
-5. Click **Process All**
-6. Images are uploaded to Replicate and processed with Real-ESRGAN
-7. Download your professionally upscaled images
+2. **Optional**: Apply filters/adjustments before processing
+3. Select your desired resolution preset (2x or 4x recommended)
+4. In **Upscaling Engine**, select **Cloud AI**
+5. (Optional) Enter your Replicate API key for guaranteed access
+6. **Optional**: Adjust batch concurrency for optimal throughput
+7. Click **Process All**
+8. Monitor progress with real-time updates
+9. Images are uploaded to Replicate and processed with Real-ESRGAN
+10. **Optional**: Apply filters/adjustments after processing
+11. Download your professionally upscaled images as individual files or ZIP
 
 **Getting a Replicate API Key:**
 1. Visit [replicate.com/account/api-tokens](https://replicate.com/account/api-tokens)
@@ -212,11 +274,15 @@ The frontend will start on `http://localhost:3000` and open in your browser.
 
 ### Using Traditional Methods (Fastest)
 1. Upload your images
-2. Select your desired resolution preset
-3. In **Upscaling Engine**, select **Traditional**
-4. Choose interpolation method (Lanczos recommended)
-5. Click **Process All**
-6. Download your upscaled images
+2. **Optional**: Apply filters/adjustments before processing
+3. Select your desired resolution preset
+4. In **Upscaling Engine**, select **Traditional**
+5. Choose interpolation method (Lanczos recommended)
+6. **Optional**: Configure batch concurrency
+7. Click **Process All**
+8. Monitor progress with detailed status updates
+9. **Optional**: Apply filters/adjustments after processing
+10. Download your upscaled images individually or as a ZIP file
 
 ## 📡 API Documentation
 
@@ -436,11 +502,9 @@ After both services are deployed, update the backend CORS settings:
 ## 🔮 Future Enhancements
 
 - [ ] Additional AI models (Waifu2x for anime, GFPGAN for faces)
-- [ ] Batch download optimization for Browser AI results
 - [ ] Progressive image loading and streaming
 - [ ] User authentication and image history
 - [ ] Cloud storage integration
-- [ ] Advanced image filters and adjustments
 - [ ] Docker containerization
 - [ ] Comparison slider for before/after view
 

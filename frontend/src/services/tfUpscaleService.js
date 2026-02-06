@@ -12,6 +12,114 @@ class TFUpscaleService {
   constructor() {
     this.modelLoaded = false;
     this.isLoading = false;
+    this.storageManager = null;
+    this.storageDbName = 'TFUpscalerStorage';
+    this.storageSchemaVer = 2;
+    this.loadedFromStorage = false;
+  }
+
+  async initializeStorageManager() {
+    if (this.storageManager) return this.storageManager;
+
+    return new Promise((done, fail) => {
+      const openReq = indexedDB.open(this.storageDbName, this.storageSchemaVer);
+
+      openReq.onupgradeneeded = (evt) => {
+        const database = evt.target.result;
+        if (!database.objectStoreNames.contains('tfBackendData')) {
+          database.createObjectStore('tfBackendData', { keyPath: 'identifier' });
+        }
+      };
+
+      openReq.onsuccess = (evt) => {
+        this.storageManager = evt.target.result;
+        done(this.storageManager);
+      };
+
+      openReq.onerror = () => fail(new Error('Storage initialization failed'));
+    });
+  }
+
+  async retrieveBackendFromStorage() {
+    try {
+      const db = await this.initializeStorageManager();
+      const readTx = db.transaction(['tfBackendData'], 'readonly');
+      const dataStore = readTx.objectStore('tfBackendData');
+      const getReq = dataStore.get('backend-configuration');
+
+      return new Promise((done) => {
+        getReq.onsuccess = () => done(getReq.result?.content || null);
+        getReq.onerror = () => done(null);
+      });
+    } catch (err) {
+      console.error('Storage retrieval error:', err);
+      return null;
+    }
+  }
+
+  async persistBackendToStorage(configuration) {
+    try {
+      const db = await this.initializeStorageManager();
+      const writeTx = db.transaction(['tfBackendData'], 'readwrite');
+      const dataStore = writeTx.objectStore('tfBackendData');
+      
+      const record = {
+        identifier: 'backend-configuration',
+        content: configuration,
+        timestamp: new Date().toISOString()
+      };
+
+      const putReq = dataStore.put(record);
+
+      return new Promise((done) => {
+        putReq.onsuccess = () => {
+          console.log('Backend configuration persisted');
+          done(true);
+        };
+        putReq.onerror = () => done(false);
+      });
+    } catch (err) {
+      console.error('Storage persist error:', err);
+      return false;
+    }
+  }
+
+  async eraseStoredBackend() {
+    try {
+      const db = await this.initializeStorageManager();
+      const deleteTx = db.transaction(['tfBackendData'], 'readwrite');
+      const dataStore = deleteTx.objectStore('tfBackendData');
+      const deleteReq = dataStore.delete('backend-configuration');
+
+      return new Promise((done) => {
+        deleteReq.onsuccess = () => {
+          console.log('Stored backend erased');
+          this.loadedFromStorage = false;
+          done(true);
+        };
+        deleteReq.onerror = () => done(false);
+      });
+    } catch (err) {
+      console.error('Storage erase error:', err);
+      return false;
+    }
+  }
+
+  async getStorageMetrics() {
+    const storedConfig = await this.retrieveBackendFromStorage();
+    const hasStored = !!storedConfig;
+    let byteSize = 0;
+
+    if (hasStored) {
+      const jsonString = JSON.stringify(storedConfig);
+      byteSize = new Blob([jsonString]).size;
+    }
+
+    return {
+      hasStoredConfig: hasStored,
+      estimatedBytes: byteSize,
+      currentlyUsingStored: this.loadedFromStorage
+    };
   }
 
   /**
@@ -38,7 +146,6 @@ class TFUpscaleService {
     }
 
     if (this.isLoading) {
-      // Wait for current loading to complete
       await new Promise(resolve => {
         const checkInterval = setInterval(() => {
           if (!this.isLoading) {
@@ -53,16 +160,31 @@ class TFUpscaleService {
     this.isLoading = true;
 
     try {
-      // Try to use WebGL backend for better performance
-      if (this.checkWebGLSupport()) {
-        await tf.setBackend('webgl');
-        console.log('TensorFlow.js using WebGL backend');
-      } else {
-        await tf.setBackend('cpu');
-        console.log('TensorFlow.js using CPU backend (WebGL not available)');
+      const storedConfig = await this.retrieveBackendFromStorage();
+      let targetBackend = 'cpu';
+      
+      if (storedConfig && storedConfig.backendName) {
+        console.log(`Using cached backend preference: ${storedConfig.backendName}`);
+        targetBackend = storedConfig.backendName;
+        this.loadedFromStorage = true;
+      } else if (this.checkWebGLSupport()) {
+        targetBackend = 'webgl';
       }
 
+      await tf.setBackend(targetBackend);
+      console.log(`TensorFlow.js using ${targetBackend} backend`);
+
       await tf.ready();
+      
+      if (!storedConfig) {
+        const configToPersist = {
+          backendName: tf.getBackend(),
+          isReady: true,
+          createdAt: Date.now()
+        };
+        await this.persistBackendToStorage(configToPersist);
+      }
+
       this.modelLoaded = true;
       this.isLoading = false;
       return true;
@@ -183,6 +305,40 @@ class TFUpscaleService {
    */
   getMemoryInfo() {
     return tf.memory();
+  }
+
+  /**
+   * Get cache status
+   */
+  async getCacheStatus() {
+    const metrics = await this.getStorageMetrics();
+    const storedConfig = await this.retrieveBackendFromStorage();
+    
+    return {
+      isLoaded: this.modelLoaded,
+      cacheSize: metrics.estimatedBytes,
+      lastCached: storedConfig?.createdAt || null,
+      isLoading: this.isLoading
+    };
+  }
+
+  /**
+   * Preload models for faster processing
+   */
+  async preloadModels() {
+    if (this.modelLoaded) {
+      return true;
+    }
+    return await this.initialize();
+  }
+
+  /**
+   * Clear cache
+   */
+  async clearCache() {
+    await this.eraseStoredBackend();
+    this.modelLoaded = false;
+    return true;
   }
 
   /**

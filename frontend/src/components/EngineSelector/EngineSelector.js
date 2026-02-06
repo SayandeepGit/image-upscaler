@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useImageContext } from '../../contexts/ImageContext';
 import tfUpscaleService from '../../services/tfUpscaleService';
+import PerformancePanel from '../PerformancePanel';
 import './EngineSelector.css';
 
 const EngineSelector = () => {
@@ -121,6 +122,10 @@ const EngineSelector = () => {
             (50 free uses/month). If not provided, server's key will be used (if configured).
           </p>
         </div>
+      )}
+
+      {upscalingSettings.engine === 'browser-ai' && (
+        <PerformancePanel />
       )}
     </div>
   );

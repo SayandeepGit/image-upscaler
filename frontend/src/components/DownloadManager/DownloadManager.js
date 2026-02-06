@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useImageContext } from '../../contexts/ImageContext';
+import { useToast } from '../../contexts/ToastContext';
 import imageService from '../../services/api';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import './DownloadManager.css';
 
 const DownloadManager = () => {
-  const { processedImages, batchId } = useImageContext();
+  const { processedImages, upscalingSettings } = useImageContext();
+  const { success, error: showError } = useToast();
+  const [zipBuilder, setZipBuilder] = useState(null);
 
   const handleDownloadSingle = async (image) => {
     try {
@@ -22,38 +27,91 @@ const DownloadManager = () => {
         // Server-based image
         await imageService.downloadImage(image.filename);
       }
-    } catch (error) {
-      console.error('Error downloading image:', error);
-      alert('Error downloading image: ' + (error.response?.data?.message || error.message));
+    } catch (err) {
+      console.error('Error downloading image:', err);
+      showError('Error downloading image: ' + (err.response?.data?.message || err.message));
     }
   };
 
+  const constructFileName = (imgItem, position) => {
+    const basename = imgItem.originalname?.split('.').slice(0, -1).join('.') || `image${position}`;
+    const scaleLabel = upscalingSettings.preset || '2x';
+    const engineUsed = imgItem.method || upscalingSettings.engine || 'traditional';
+    const techSuffix = (typeof engineUsed === 'string' && engineUsed.match(/ai/i)) ? 'ai' : 'trad';
+    return `${basename}_upscaled_${scaleLabel}_${techSuffix}.${imgItem.format || 'png'}`;
+  };
+
   const handleDownloadAll = async () => {
-    if (processedImages.length === 0) {
-      alert('No processed images to download');
+    if (!processedImages.length) {
+      showError('No processed images to download');
       return;
     }
 
+    const progressTracker = { total: processedImages.length, collected: 0, phase: 'starting' };
+    
     try {
-      // Check if any images are browser AI results
-      const hasBrowserAI = processedImages.some(img => img.blob);
-      
-      if (hasBrowserAI) {
-        // For browser AI, download each individually
-        alert('Downloading images individually...');
-        for (const image of processedImages) {
-          await handleDownloadSingle(image);
-          // Small delay between downloads
-          await new Promise(resolve => setTimeout(resolve, 300));
+      const zipContainer = new JSZip();
+      const targetFolder = zipContainer.folder('upscaled');
+      let successfulAdds = 0;
+
+      for (let idx = 0; idx < processedImages.length; idx++) {
+        const imgItem = processedImages[idx];
+        const targetName = constructFileName(imgItem, idx + 1);
+        
+        progressTracker.collected = idx + 1;
+        progressTracker.phase = `collecting ${targetName}`;
+        if (idx % 3 === 0 || idx === processedImages.length - 1) {
+          setZipBuilder({...progressTracker});
         }
-      } else {
-        // Server-based images - use batch download
-        const filenames = processedImages.map(img => img.filename);
-        await imageService.downloadBatch(batchId || 'batch', filenames);
+
+        let imageBlob = null;
+
+        if (imgItem.blob) {
+          imageBlob = imgItem.blob;
+        } else if (imgItem.filename) {
+          try {
+            const imgURL = imageService.getImageUrl(imgItem.filename, true);
+            const response = await fetch(imgURL);
+            if (response.ok) {
+              imageBlob = await response.blob();
+            }
+          } catch (fetchError) {
+            console.warn(`Skipping ${imgItem.filename}:`, fetchError);
+            continue;
+          }
+        }
+
+        if (imageBlob) {
+          targetFolder.file(targetName, imageBlob);
+          successfulAdds++;
+        }
       }
-    } catch (error) {
-      console.error('Error downloading batch:', error);
-      alert('Error downloading batch: ' + (error.response?.data?.message || error.message));
+
+      if (successfulAdds === 0) {
+        throw new Error('Could not collect any images for archive');
+      }
+
+      progressTracker.phase = 'building archive';
+      setZipBuilder({...progressTracker});
+
+      const finalBlob = await zipContainer.generateAsync(
+        { type: 'blob', compression: 'DEFLATE' },
+        (progressData) => {
+          progressTracker.phase = `compressing ${Math.round(progressData.percent)}%`;
+          setZipBuilder({...progressTracker});
+        }
+      );
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+      const zipName = `upscaled_images_${timestamp}.zip`;
+      saveAs(finalBlob, zipName);
+
+      setZipBuilder(null);
+      success(`ZIP file downloaded successfully! (${processedImages.length} images)`);
+    } catch (err) {
+      console.error('Zip creation failed:', err);
+      showError(`Archive creation failed: ${err.message}`);
+      setZipBuilder(null);
     }
   };
 
@@ -76,10 +134,24 @@ const DownloadManager = () => {
         <button
           className="btn btn-download-all"
           onClick={handleDownloadAll}
+          disabled={zipBuilder !== null}
         >
           📦 Download All as ZIP
         </button>
       </div>
+
+      {zipBuilder && (
+        <div className="zip-builder-status">
+          <div className="zip-status-text">{zipBuilder.phase}</div>
+          <div className="zip-progress-track">
+            <div 
+              className="zip-progress-fill"
+              style={{ width: `${(zipBuilder.collected / zipBuilder.total) * 100}%` }}
+            />
+          </div>
+          <div className="zip-count-display">{zipBuilder.collected} / {zipBuilder.total}</div>
+        </div>
+      )}
 
       <div className="download-list">
         {processedImages.map((image, index) => (
