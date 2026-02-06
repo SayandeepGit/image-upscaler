@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useImageContext } from '../../contexts/ImageContext';
 import imageService from '../../services/api';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import './DownloadManager.css';
 
 const DownloadManager = () => {
-  const { processedImages, batchId } = useImageContext();
+  const { processedImages, batchId, upscalingSettings } = useImageContext();
+  const [zipBuilder, setZipBuilder] = useState(null);
 
   const handleDownloadSingle = async (image) => {
     try {
@@ -28,32 +31,83 @@ const DownloadManager = () => {
     }
   };
 
+  const constructFileName = (imgItem, position) => {
+    const basename = imgItem.originalname?.split('.').slice(0, -1).join('.') || `image${position}`;
+    const scaleLabel = upscalingSettings.preset || '2x';
+    const engineUsed = imgItem.method || upscalingSettings.engine || 'traditional';
+    const techSuffix = engineUsed.match(/ai/i) ? 'ai' : 'trad';
+    return `${basename}_upscaled_${scaleLabel}_${techSuffix}.${imgItem.format || 'png'}`;
+  };
+
   const handleDownloadAll = async () => {
-    if (processedImages.length === 0) {
+    if (!processedImages.length) {
       alert('No processed images to download');
       return;
     }
 
+    const collector = { total: processedImages.length, collected: 0, phase: 'starting' };
+    setZipBuilder(collector);
+
     try {
-      // Check if any images are browser AI results
-      const hasBrowserAI = processedImages.some(img => img.blob);
-      
-      if (hasBrowserAI) {
-        // For browser AI, download each individually
-        alert('Downloading images individually...');
-        for (const image of processedImages) {
-          await handleDownloadSingle(image);
-          // Small delay between downloads
-          await new Promise(resolve => setTimeout(resolve, 300));
+      const zipContainer = new JSZip();
+      const targetFolder = zipContainer.folder('upscaled');
+      let successfulAdds = 0;
+
+      for (let idx = 0; idx < processedImages.length; idx++) {
+        const imgItem = processedImages[idx];
+        const targetName = constructFileName(imgItem, idx + 1);
+        
+        collector.collected = idx + 1;
+        collector.phase = `collecting ${targetName}`;
+        setZipBuilder({...collector});
+
+        let imageBlob = null;
+
+        if (imgItem.blob) {
+          imageBlob = imgItem.blob;
+        } else if (imgItem.filename) {
+          try {
+            const imgURL = imageService.getImageUrl(imgItem.filename, true);
+            const response = await fetch(imgURL);
+            if (response.ok) {
+              imageBlob = await response.blob();
+            }
+          } catch (fetchError) {
+            console.warn(`Skipping ${imgItem.filename}:`, fetchError);
+            continue;
+          }
         }
-      } else {
-        // Server-based images - use batch download
-        const filenames = processedImages.map(img => img.filename);
-        await imageService.downloadBatch(batchId || 'batch', filenames);
+
+        if (imageBlob) {
+          targetFolder.file(targetName, imageBlob);
+          successfulAdds++;
+        }
       }
+
+      if (successfulAdds === 0) {
+        throw new Error('Could not collect any images for archive');
+      }
+
+      collector.phase = 'building archive';
+      setZipBuilder({...collector});
+
+      const finalBlob = await zipContainer.generateAsync(
+        { type: 'blob', compression: 'DEFLATE' },
+        (progressData) => {
+          collector.phase = `compressing ${Math.round(progressData.percent)}%`;
+          setZipBuilder({...collector});
+        }
+      );
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+      const zipName = `upscaled_images_${timestamp}.zip`;
+      saveAs(finalBlob, zipName);
+
+      setZipBuilder(null);
     } catch (error) {
-      console.error('Error downloading batch:', error);
-      alert('Error downloading batch: ' + (error.response?.data?.message || error.message));
+      console.error('Zip creation failed:', error);
+      alert(`Archive creation failed: ${error.message}`);
+      setZipBuilder(null);
     }
   };
 
@@ -76,10 +130,24 @@ const DownloadManager = () => {
         <button
           className="btn btn-download-all"
           onClick={handleDownloadAll}
+          disabled={zipBuilder !== null}
         >
           📦 Download All as ZIP
         </button>
       </div>
+
+      {zipBuilder && (
+        <div className="zip-builder-status">
+          <div className="zip-status-text">{zipBuilder.phase}</div>
+          <div className="zip-progress-track">
+            <div 
+              className="zip-progress-fill"
+              style={{ width: `${(zipBuilder.collected / zipBuilder.total) * 100}%` }}
+            />
+          </div>
+          <div className="zip-count-display">{zipBuilder.collected} / {zipBuilder.total}</div>
+        </div>
+      )}
 
       <div className="download-list">
         {processedImages.map((image, index) => (

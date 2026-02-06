@@ -111,6 +111,47 @@
   opacity: 0.9;
 }
 
+.zip-builder-status {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: var(--bg-section);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.zip-status-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 10px;
+}
+
+.zip-progress-track {
+  width: 100%;
+  height: 8px;
+  background-color: var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.zip-progress-fill {
+  height: 100%;
+  background-color: var(--color-blue);
+  transition: width 0.3s ease;
+}
+
+.zip-count-display {
+  font-size: 13px;
+  color: var(--text-sub);
+  text-align: right;
+}
+
+.btn-download-all:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .download-header {
     flex-direction: column;

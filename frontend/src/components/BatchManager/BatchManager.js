@@ -18,9 +18,38 @@ const BatchManager = () => {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressMessage, setProgressMessage] = useState('');
+  const [multiSlotProcessor, setMultiSlotProcessor] = useState({
+    queued: [],
+    activeSlots: [],
+    finished: [],
+    errored: [],
+    isPaused: false,
+    maxSlots: 2
+  });
 
   const handleRemoveImage = (filename) => {
     removeUploadedImage(filename);
+  };
+
+  const updateMultiSlotProcessor = (updates) => {
+    setMultiSlotProcessor(prev => ({ ...prev, ...updates }));
+  };
+
+  const calculateCompletionRate = () => {
+    if (uploadedImages.length === 0) return 0;
+    const completed = multiSlotProcessor.finished.length + multiSlotProcessor.errored.length;
+    return Math.floor((completed / uploadedImages.length) * 100);
+  };
+
+  const resetMultiSlotProcessor = () => {
+    setMultiSlotProcessor({
+      queued: [],
+      activeSlots: [],
+      finished: [],
+      errored: [],
+      isPaused: false,
+      maxSlots: 2
+    });
   };
 
   /**
@@ -163,67 +192,21 @@ const BatchManager = () => {
     }
 
     setIsProcessing(true);
+    resetMultiSlotProcessor();
+
+    const imagesToProcess = [...uploadedImages];
+    updateMultiSlotProcessor({ queued: imagesToProcess.map(img => img.filename) });
 
     try {
-      const filenames = uploadedImages.map(img => img.filename);
+      const filenames = imagesToProcess.map(img => img.filename);
       
-      // Update all to processing
       filenames.forEach(filename => {
         updateProcessingStatus(filename, 'processing');
       });
 
-      // Process based on engine type
-      if (upscalingSettings.engine === 'browser-ai') {
-        // Process each image individually with Browser AI
-        let successCount = 0;
-        for (let i = 0; i < uploadedImages.length; i++) {
-          const image = uploadedImages[i];
-          setProgressMessage(`Processing ${i + 1} of ${uploadedImages.length}...`);
-          
-          try {
-            const result = await processBrowserAI(image);
-            updateProcessingStatus(image.filename, 'completed');
-            addProcessedImage(result);
-            successCount++;
-          } catch (error) {
-            console.error(`Error processing ${image.originalname}:`, error);
-            updateProcessingStatus(image.filename, 'error');
-          }
-        }
-        
-        alert(`Processed ${successCount} of ${uploadedImages.length} images successfully!`);
-      } else if (upscalingSettings.engine === 'cloud-ai') {
-        // Process each image individually with Cloud AI
-        let successCount = 0;
-        for (let i = 0; i < uploadedImages.length; i++) {
-          const image = uploadedImages[i];
-          setProgressMessage(`Processing ${i + 1} of ${uploadedImages.length} with Cloud AI...`);
-          
-          try {
-            const result = await processCloudAI(image);
-            updateProcessingStatus(image.filename, 'completed');
-            addProcessedImage(result);
-            successCount++;
-          } catch (error) {
-            console.error(`Error processing ${image.originalname}:`, error);
-            updateProcessingStatus(image.filename, 'error');
-            
-            // Show specific error for first failure
-            if (successCount === 0) {
-              let errorMessage = 'Error processing with Cloud AI';
-              if (error.response?.data?.error) {
-                errorMessage = error.response.data.error;
-              } else if (error.message) {
-                errorMessage = error.message;
-              }
-              alert(errorMessage);
-            }
-          }
-        }
-        
-        alert(`Processed ${successCount} of ${uploadedImages.length} images successfully!`);
+      if (upscalingSettings.engine === 'browser-ai' || upscalingSettings.engine === 'cloud-ai') {
+        await executeMultiSlotProcessing(imagesToProcess);
       } else {
-        // Use traditional batch processing
         const result = await imageService.batchUpscale(filenames, upscalingSettings);
         
         if (result.success) {
@@ -233,8 +216,14 @@ const BatchManager = () => {
             if (res.success) {
               updateProcessingStatus(res.originalname, 'completed');
               addProcessedImage(res);
+              updateMultiSlotProcessor({
+                finished: [...multiSlotProcessor.finished, res.originalname]
+              });
             } else {
               updateProcessingStatus(res.originalname, 'error');
+              updateMultiSlotProcessor({
+                errored: [...multiSlotProcessor.errored, res.originalname]
+              });
             }
           });
 
@@ -254,6 +243,83 @@ const BatchManager = () => {
       setIsProcessing(false);
       setProgressMessage('');
     }
+  };
+
+  const executeMultiSlotProcessing = async (images) => {
+    const slots = [];
+    let nextIdx = 0;
+    let processor = { ...multiSlotProcessor };
+
+    const processSlot = async (slotId) => {
+      while (nextIdx < images.length && !processor.isPaused) {
+        const idx = nextIdx++;
+        const img = images[idx];
+        
+        if (!img) break;
+
+        processor.activeSlots = [...processor.activeSlots, img.filename];
+        updateMultiSlotProcessor(processor);
+
+        setProgressMessage(`[Slot ${slotId}] ${idx + 1}/${images.length}: ${img.originalname}`);
+        
+        try {
+          let output;
+          
+          if (upscalingSettings.engine === 'browser-ai') {
+            output = await processBrowserAI(img);
+          } else if (upscalingSettings.engine === 'cloud-ai') {
+            output = await processCloudAI(img);
+          }
+          
+          updateProcessingStatus(img.filename, 'completed');
+          addProcessedImage(output);
+          
+          processor.activeSlots = processor.activeSlots.filter(f => f !== img.filename);
+          processor.finished = [...processor.finished, img.filename];
+          processor.queued = processor.queued.filter(f => f !== img.filename);
+          updateMultiSlotProcessor(processor);
+        } catch (err) {
+          console.error(`Slot ${slotId} failed on ${img.originalname}:`, err);
+          updateProcessingStatus(img.filename, 'error');
+          
+          processor.activeSlots = processor.activeSlots.filter(f => f !== img.filename);
+          processor.errored = [...processor.errored, img.filename];
+          processor.queued = processor.queued.filter(f => f !== img.filename);
+          updateMultiSlotProcessor(processor);
+        }
+      }
+    };
+
+    for (let slot = 0; slot < processor.maxSlots; slot++) {
+      slots.push(processSlot(slot + 1));
+    }
+
+    await Promise.all(slots);
+    
+    alert(`Completed ${processor.finished.length} of ${images.length} images!`);
+  };
+
+  const pauseProcessing = () => {
+    updateMultiSlotProcessor({ isPaused: true });
+    setProgressMessage('Pausing after active tasks complete...');
+  };
+
+  const resumeProcessing = () => {
+    updateMultiSlotProcessor({ isPaused: false });
+    setProgressMessage('Resuming processing...');
+    if (multiSlotProcessor.queued.length > 0) {
+      const remaining = uploadedImages.filter(img => 
+        multiSlotProcessor.queued.includes(img.filename)
+      );
+      executeMultiSlotProcessing(remaining);
+    }
+  };
+
+  const stopProcessing = () => {
+    updateMultiSlotProcessor({ isPaused: true, queued: [], activeSlots: [] });
+    setIsProcessing(false);
+    setProgressMessage('Processing stopped');
+    setTimeout(() => setProgressMessage(''), 2000);
   };
 
   const formatFileSize = (bytes) => {
@@ -276,6 +342,21 @@ const BatchManager = () => {
           >
             {isProcessing ? 'Processing...' : 'Process All'}
           </button>
+          {isProcessing && !multiSlotProcessor.isPaused && (
+            <button className="btn btn-warning" onClick={pauseProcessing}>
+              Pause
+            </button>
+          )}
+          {isProcessing && multiSlotProcessor.isPaused && (
+            <button className="btn btn-success" onClick={resumeProcessing}>
+              Resume
+            </button>
+          )}
+          {isProcessing && (
+            <button className="btn btn-danger" onClick={stopProcessing}>
+              Cancel
+            </button>
+          )}
           <button
             className="btn btn-secondary"
             onClick={clearUploadedImages}
@@ -289,6 +370,12 @@ const BatchManager = () => {
       {progressMessage && (
         <div className="progress-message">
           {progressMessage}
+          {isProcessing && (
+            <div className="completion-indicator">
+              {calculateCompletionRate()}% complete
+              {' '}({multiSlotProcessor.finished.length + multiSlotProcessor.errored.length}/{uploadedImages.length})
+            </div>
+          )}
         </div>
       )}
 
