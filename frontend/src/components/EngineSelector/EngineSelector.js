@@ -1,17 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useImageContext } from '../../contexts/ImageContext';
-import tfUpscaleService from '../../services/tfUpscaleService';
-import PerformancePanel from '../PerformancePanel';
 import './EngineSelector.css';
+
+const PerformancePanel = lazy(() => import('../PerformancePanel'));
 
 const EngineSelector = () => {
   const { upscalingSettings, updateUpscalingSettings } = useImageContext();
   const [webglSupported, setWebglSupported] = useState(true);
 
   useEffect(() => {
-    // Check WebGL support
-    const isSupported = tfUpscaleService.checkWebGLSupport();
-    setWebglSupported(isSupported);
+    // Check WebGL support without loading TensorFlow.js on initial app load
+    try {
+      const canvas = document.createElement('canvas');
+      const isSupported = !!(
+        window.WebGLRenderingContext &&
+        (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+      );
+      setWebglSupported(isSupported);
+    } catch (error) {
+      setWebglSupported(false);
+    }
   }, []);
 
   const engines = [
@@ -125,7 +133,9 @@ const EngineSelector = () => {
       )}
 
       {upscalingSettings.engine === 'browser-ai' && (
-        <PerformancePanel />
+        <Suspense fallback={<p className="engine-note">Loading AI performance tools...</p>}>
+          <PerformancePanel />
+        </Suspense>
       )}
     </div>
   );

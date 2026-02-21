@@ -2,8 +2,17 @@ import React, { useState } from 'react';
 import { useImageContext } from '../../contexts/ImageContext';
 import { useToast } from '../../contexts/ToastContext';
 import imageService from '../../services/api';
-import tfUpscaleService from '../../services/tfUpscaleService';
 import './BatchManager.css';
+
+let tfUpscaleServicePromise;
+
+const loadTFUpscaleService = async () => {
+  if (!tfUpscaleServicePromise) {
+    tfUpscaleServicePromise = import('../../services/tfUpscaleService').then((module) => module.default);
+  }
+
+  return tfUpscaleServicePromise;
+};
 
 const BatchManager = () => {
   const {
@@ -106,6 +115,9 @@ const BatchManager = () => {
       
       setProgressMessage(`Processing ${image.originalname}...`);
       
+      // Load TensorFlow service only when Browser AI processing is used
+      const tfUpscaleService = await loadTFUpscaleService();
+
       // Upscale with TensorFlow.js
       const upscaledBlob = await tfUpscaleService.upscaleImage(blob, scale, (progress) => {
         if (progress.stage === 'loading') {
