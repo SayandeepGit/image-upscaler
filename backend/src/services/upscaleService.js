@@ -41,6 +41,28 @@ class UpscaleService {
   }
 
   /**
+   * Build Sharp resize options based on preset.
+   * - For fixed canvas presets (HD/4K/custom): keep aspect ratio to avoid stretching.
+   * - For multiplier presets (2x/4x): direct upscale by ratio.
+   */
+  getResizeOptions(preset, kernel) {
+    const isFixedCanvasPreset = preset === 'HD' || preset === '4K' || preset === 'custom';
+
+    if (isFixedCanvasPreset) {
+      return {
+        kernel,
+        fit: 'inside',
+        withoutEnlargement: false
+      };
+    }
+
+    return {
+      kernel,
+      fit: 'fill'
+    };
+  }
+
+  /**
    * Get Sharp kernel based on method
    */
   getKernel(method) {
@@ -92,13 +114,11 @@ class UpscaleService {
       const kernel = this.getKernel(method);
 
       // Process image
-      // Using 'fill' fit mode to resize to exact dimensions
-      // This may distort images if aspect ratio changes
+      // Avoid stretching on fixed-canvas presets by preserving aspect ratio.
+      const resizeOptions = this.getResizeOptions(preset, kernel);
+
       await sharp(inputPath)
-        .resize(width, height, {
-          kernel: kernel,
-          fit: 'fill'
-        })
+        .resize(width, height, resizeOptions)
         .toFile(outputPath);
 
       // Get output metadata
